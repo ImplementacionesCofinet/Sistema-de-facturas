@@ -11,6 +11,11 @@
 # La app queda publicada en el puerto 8080 del servidor. Nada sale a internet.
 # =============================================================================
 
+# Nombre fijo del proyecto: asi aparece siempre igual en Docker Desktop,
+# sin depender de como se llame la carpeta, y no se mezcla con otros
+# proyectos que se tengan en la misma maquina.
+name: cofinet-facturas
+
 services:
   base-de-datos:
     image: postgres:16-alpine

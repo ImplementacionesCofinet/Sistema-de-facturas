@@ -98,6 +98,32 @@ docker compose --env-file .env.produccion run --rm app node scripts/clave.mjs ju
 Aquí la dirección es **http://localhost:8080** (no 3000), porque el contenedor publica ese
 puerto.
 
+### Si ya tiene otros proyectos en Docker Desktop
+
+Los dos pueden convivir sin tocarse. Este proyecto usa nombres propios para todo
+(`cofinet-facturas`), su PostgreSQL **no publica ningún puerto** —solo lo alcanza la app— y
+cada proyecto de Compose corre en su propia red.
+
+Lo único que se comparte es el puerto con el que usted entra desde el navegador. Antes de
+levantarlo, mire qué puertos están ocupados:
+
+```bash
+docker ps --format "table {{.Names}}\t{{.Ports}}"
+```
+
+Si algo ya usa el 8080, cambie `PUERTO` en `.env.produccion` (por ejemplo `PUERTO=8090`),
+vuelva a levantar y entre a `http://localhost:8090`.
+
+Para no confundirse, conviene una carpeta por proyecto:
+
+```
+C:\dev\
+  mesa-de-ayuda\
+  facturas\          <- este proyecto
+```
+
+Cada carpeta tiene su propio `.env.produccion` y sus propios comandos; nada se pisa.
+
 ### Si algo falla
 
 | Síntoma | Qué revisar |
