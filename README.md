@@ -28,27 +28,102 @@ usuario, fecha y hora exacta, sin depender del historial de versiones de un arch
 
 Sin ORM: SQL explícito sobre `pg`, con migraciones versionadas en `db/migrations/`.
 
-## Puesta en marcha
+## Abrirlo en su computador (localhost)
 
-### 1. Requisitos
+### Lo que necesita instalado
 
-- Node.js 20 o superior
-- PostgreSQL 14 o superior
+- **Node.js 20 o superior** — https://nodejs.org (elija la versión LTS).
+- **PostgreSQL 14 o superior** — https://www.postgresql.org/download/
+  Durante la instalación le pedirá una contraseña para el usuario `postgres`:
+  anótela, la va a necesitar.
 
-### 2. Instalación
+Verifique que quedaron bien abriendo una terminal:
 
 ```bash
-npm install
-cp .env.example .env     # complete los valores
-npm run db:migrate       # crea las tablas
-npm run db:seed          # carga áreas y aprobadores iniciales
-npm run clave juan.garcia@cofinet.com.au   # clave del primer administrador
-npm run dev              # http://localhost:3000
+node --version      # debe decir v20 o superior
+psql --version      # debe decir 14 o superior
 ```
 
-Antes de sembrar, ajuste la lista de áreas y correos reales en `scripts/seed.ts`.
+### Paso a paso
 
-### 3. Variables de entorno
+```bash
+# 1. Traer el código
+git clone https://github.com/ImplementacionesCofinet/Sistema-de-facturas.git
+cd Sistema-de-facturas
+git checkout claude/cofinet-invoice-approval-app-xrvczf
+
+# 2. Instalar las librerías
+npm install
+
+# 3. Crear la base de datos (le pedirá la contraseña de postgres)
+createdb -U postgres cofinet_facturas
+
+# 4. Generar el archivo de configuración con su correo
+npm run preparar -- juan.garcia@cofinet.com.au
+
+# 5. Crear las tablas y los datos iniciales
+npm run db:migrate
+npm run db:seed
+
+# 6. Crear su contraseña (imprime una clave temporal: cópiela)
+npm run clave juan.garcia@cofinet.com.au
+
+# 7. Arrancar
+npm run dev
+```
+
+Abra **http://localhost:3000** en el navegador y entre con su correo y la clave temporal
+que imprimió el paso 6. La app le pedirá cambiarla de inmediato.
+
+El paso 4 escribe un archivo `.env` con una clave de sesión aleatoria. Si su PostgreSQL usa
+otro usuario o contraseña, edite la línea `DATABASE_URL` de ese archivo antes del paso 5:
+
+```
+DATABASE_URL=postgresql://USUARIO:CONTRASEÑA@localhost:5432/cofinet_facturas
+```
+
+### Si prefiere no instalar PostgreSQL (con Docker Desktop)
+
+```bash
+cp .env.produccion.example .env.produccion
+# edite .env.produccion: ponga POSTGRES_PASSWORD, SESSION_SECRET,
+# APP_URL=http://localhost:8080 y su correo en ADMIN_EMAILS
+
+docker compose --env-file .env.produccion up -d --build
+docker compose --env-file .env.produccion run --rm app node scripts/migrate.mjs
+docker compose --env-file .env.produccion run --rm app node scripts/seed.mjs
+docker compose --env-file .env.produccion run --rm app node scripts/clave.mjs juan.garcia@cofinet.com.au
+```
+
+Aquí la dirección es **http://localhost:8080** (no 3000), porque el contenedor publica ese
+puerto.
+
+### Si algo falla
+
+| Síntoma | Qué revisar |
+|---|---|
+| `connect ECONNREFUSED ...:5432` | PostgreSQL no está corriendo, o `DATABASE_URL` tiene otro puerto o contraseña. |
+| `database "cofinet_facturas" does not exist` | Falta el paso 3 (`createdb`). |
+| `Falta DATABASE_URL` | Falta el paso 4, o está ejecutando desde otra carpeta. |
+| `relation "facturas" does not exist` | Falta el paso 5 (`npm run db:migrate`). |
+| Entra al login pero dice «Correo o contraseña incorrectos» | Falta el paso 6, o la clave temporal ya se usó y se cambió. Vuelva a ejecutar `npm run clave <correo>`. |
+| Dice «Su cuenta no está registrada como aprobador» | El correo no quedó en `ADMIN_EMAILS` (paso 4) ni en la tabla `aprobadores`. |
+| `Port 3000 is already in use` | Otra cosa ocupa el puerto: `npm run dev -- -p 3001` y abra `localhost:3001`. |
+
+### Para que lo vean otros equipos de la red
+
+`npm run dev` escucha solo en su computador. Para que entren desde otras máquinas:
+
+```bash
+npm run dev -- -H 0.0.0.0
+```
+
+Y entran a `http://<la-IP-de-su-equipo>:3000`. Para uso real de la empresa, en lugar de
+esto use la instalación en el servidor que se describe más abajo.
+
+## Configuración
+
+### Variables de entorno
 
 Están todas documentadas en `.env.example`. Las imprescindibles:
 
@@ -56,7 +131,8 @@ Están todas documentadas en `.env.example`. Las imprescindibles:
 |---|---|
 | `DATABASE_URL` | Cadena de conexión a PostgreSQL |
 | `SESSION_SECRET` | Firma la cookie de sesión (mínimo 32 caracteres) |
-| `APP_URL` | URL pública; debe coincidir con el redirect URI de Azure |
+| `APP_URL` | Dirección con la que se abre la app; con Azure debe coincidir con el redirect URI |
+| `AUTH_MODE` | `local` (correo y contraseña), `entra` (Microsoft 365) o `ambos` |
 | `MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_CLIENT_SECRET` | Credenciales de Microsoft Entra ID |
 | `ADMIN_EMAILS` | Correos que entran como ADMIN aunque la tabla `aprobadores` esté vacía |
 | `STORAGE_DRIVER` | `local` o `azure` |
@@ -67,7 +143,10 @@ Genere el secreto de sesión con:
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 ```
 
-### 4. Registro en Microsoft Entra ID
+### Registro en Microsoft Entra ID (opcional)
+
+Solo hace falta si va a usar `AUTH_MODE=entra` o `ambos`. Para entrar con correo y
+contraseña locales (`AUTH_MODE=local`) puede saltarse esta sección.
 
 En el portal de Azure, tenant `cofinetcomco.onmicrosoft.com`:
 
@@ -200,16 +279,19 @@ alcanza la aplicación.
 
 ```bash
 # En el servidor, dentro de la carpeta del proyecto
-cp .env.produccion.example .env     # complete los valores
-docker compose up -d --build
+cp .env.produccion.example .env.produccion    # complete los valores
+docker compose --env-file .env.produccion up -d --build
 
 # Crear las tablas la primera vez
-docker compose run --rm app node scripts/migrate.mjs
-docker compose run --rm app node scripts/seed.mjs
+docker compose --env-file .env.produccion run --rm app node scripts/migrate.mjs
+docker compose --env-file .env.produccion run --rm app node scripts/seed.mjs
 
 # Crear la contraseña del primer administrador
-docker compose run --rm app node scripts/clave.mjs juan.garcia@cofinet.com.au
+docker compose --env-file .env.produccion run --rm app node scripts/clave.mjs juan.garcia@cofinet.com.au
 ```
+
+> El servidor usa `.env.produccion`, y el computador donde se desarrolla usa `.env`.
+> Son archivos distintos a propósito: así no se mezcla la configuración de los dos.
 
 El último comando imprime una clave temporal. Con ella se entra a
 `http://<servidor>:8080`, la app obliga a cambiarla, y desde **Aprobadores** se registran
@@ -218,10 +300,10 @@ las demás personas y se les genera su propia clave temporal.
 Comandos útiles:
 
 ```bash
-docker compose ps                   # estado de los servicios
-docker compose logs -f app          # ver el registro de la aplicación
-docker compose down                 # detener (los datos se conservan)
-docker compose up -d --build        # actualizar tras traer una versión nueva
+docker compose --env-file .env.produccion ps            # estado de los servicios
+docker compose --env-file .env.produccion logs -f app   # registro de la aplicación
+docker compose --env-file .env.produccion down          # detener (los datos se conservan)
+docker compose --env-file .env.produccion up -d --build # actualizar a una versión nueva
 ```
 
 ### Opción B — Sin Docker (Node y PostgreSQL instalados en el servidor)

@@ -1,8 +1,12 @@
 # =============================================================================
 # Despliegue en la red interna de Cofinet.
 #
-#   docker compose up -d                          arranca todo
-#   docker compose run --rm app node scripts/migrate.mjs   crea las tablas
+# La configuracion se lee de .env.produccion (copiado de .env.produccion.example),
+# que es un archivo aparte del .env que se usa para trabajar en un computador:
+# asi no se mezclan valores de desarrollo con los del servidor.
+#
+#   docker compose --env-file .env.produccion up -d --build
+#   docker compose --env-file .env.produccion run --rm app node scripts/migrate.mjs
 #
 # La app queda publicada en el puerto 8080 del servidor. Nada sale a internet.
 # =============================================================================
