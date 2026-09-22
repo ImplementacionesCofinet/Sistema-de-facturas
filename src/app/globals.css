@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm
+           font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-cofinet-600 text-white hover:bg-cofinet-700;
+  }
+  .btn-secundario {
+    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-100;
+  }
+  .btn-peligro {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+  .campo {
+    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm
+           text-slate-800 shadow-sm outline-none focus:border-cofinet-500
+           focus:ring-2 focus:ring-cofinet-200 disabled:bg-slate-100;
+  }
+  .etiqueta {
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .tarjeta {
+    @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+}
