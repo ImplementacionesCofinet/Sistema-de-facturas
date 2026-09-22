@@ -1,8 +1,12 @@
+import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { Nav } from '@/components/Nav';
 
 export default async function LayoutApp({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+
+  // Quien entro con una clave temporal no puede usar la app hasta cambiarla.
+  if (user.debeCambiarClave) redirect('/cambiar-clave');
 
   return (
     <div className="min-h-screen">

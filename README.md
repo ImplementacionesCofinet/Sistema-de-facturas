@@ -22,7 +22,7 @@ usuario, fecha y hora exacta, sin depender del historial de versiones de un arch
 | Frontend y backend | Next.js 15 (App Router, Server Components y Server Actions) + React 19 |
 | Estilos | Tailwind CSS |
 | Base de datos | PostgreSQL (compatible con Supabase, Neon, Railway, Render) |
-| Autenticación | Microsoft Entra ID (OAuth 2.0 + PKCE) contra el tenant corporativo |
+| Autenticación | Usuario y contraseña locales, o Microsoft Entra ID (OAuth 2.0 + PKCE) |
 | Adjuntos | Azure Blob Storage o disco local |
 | Lectura de Excel | ExcelJS (.xlsx / .xlsm) y lector propio de CSV |
 
@@ -42,6 +42,7 @@ npm install
 cp .env.example .env     # complete los valores
 npm run db:migrate       # crea las tablas
 npm run db:seed          # carga áreas y aprobadores iniciales
+npm run clave juan.garcia@cofinet.com.au   # clave del primer administrador
 npm run dev              # http://localhost:3000
 ```
 
@@ -158,45 +159,180 @@ npm run typecheck   # TypeScript sin emitir
 npm test            # pruebas unitarias (Vitest)
 npm run db:migrate  # aplica las migraciones pendientes
 npm run db:seed     # carga áreas y aprobadores iniciales
+npm run db:respaldo # respaldo de la base con pg_dump
+npm run clave <correo> [clave]   # crea o restablece una contraseña local
 ```
 
 ## Pruebas
 
 `npm test` cubre la parte más delicada: la normalización de montos, fechas, NIT y números
-de factura, la construcción del `id_unico` y el reconocimiento de encabezados de la DIAN y
-del Excel actual de Cofinet.
+de factura, la construcción del `id_unico`, el reconocimiento de encabezados de la DIAN y
+del Excel actual de Cofinet, y el manejo de contraseñas.
 
-## Despliegue
+Hay además pruebas de integración del inicio de sesión local (contraseña correcta e
+incorrecta, cambio de contraseña, bloqueo por intentos fallidos, cuenta desactivada) que se
+ejecutan solo si se les pasa una base de datos:
 
-### Vercel (recomendado, fullstack en un solo servicio)
+```bash
+DATABASE_URL=postgresql://usuario:clave@localhost:5432/cofinet_pruebas npm test
+```
 
-1. Conecte el repositorio.
-2. Cargue las variables de entorno del `.env.example`.
-3. `APP_URL` = la URL de producción, y agregue `{APP_URL}/api/auth/callback` como redirect
-   URI en Azure.
-4. Use `STORAGE_DRIVER=azure`: el sistema de archivos de Vercel no es persistente.
-5. Ejecute `npm run db:migrate` una vez contra la base de producción.
+Sin esa variable se omiten, para que `npm test` siga funcionando en un equipo sin
+PostgreSQL.
 
-### Railway o Render
+## Despliegue en la red de la empresa
 
-Mismo procedimiento. Con `STORAGE_DRIVER=local` monte un volumen persistente en
-`STORAGE_LOCAL_DIR`; de lo contrario los adjuntos se pierden en cada despliegue.
+La instalación pensada es **dentro de la red de Cofinet**: la app corre en un servidor de
+la oficina, la gente entra desde sus equipos por la LAN y nada se publica en internet.
 
-### Base de datos
+### Qué se necesita
 
-Sirve cualquier PostgreSQL gestionado. Con Supabase use la cadena del *Connection pooler*
-(puerto 6543); el SSL se activa solo.
+- Un servidor (físico o máquina virtual) encendido en horario laboral, con IP fija o
+  nombre DNS interno.
+- Docker Desktop (Windows Server) o Docker Engine (Linux). Si no se quiere Docker, ver más
+  abajo la instalación directa.
+- Puerto 8080 abierto en el firewall del servidor **solo para la red interna**.
+
+### Opción A — Docker Compose (recomendada)
+
+Levanta la app y su PostgreSQL juntos. La base de datos **no** se expone a la red: solo la
+alcanza la aplicación.
+
+```bash
+# En el servidor, dentro de la carpeta del proyecto
+cp .env.produccion.example .env     # complete los valores
+docker compose up -d --build
+
+# Crear las tablas la primera vez
+docker compose run --rm app node scripts/migrate.mjs
+docker compose run --rm app node scripts/seed.mjs
+
+# Crear la contraseña del primer administrador
+docker compose run --rm app node scripts/clave.mjs juan.garcia@cofinet.com.au
+```
+
+El último comando imprime una clave temporal. Con ella se entra a
+`http://<servidor>:8080`, la app obliga a cambiarla, y desde **Aprobadores** se registran
+las demás personas y se les genera su propia clave temporal.
+
+Comandos útiles:
+
+```bash
+docker compose ps                   # estado de los servicios
+docker compose logs -f app          # ver el registro de la aplicación
+docker compose down                 # detener (los datos se conservan)
+docker compose up -d --build        # actualizar tras traer una versión nueva
+```
+
+### Opción B — Sin Docker (Node y PostgreSQL instalados en el servidor)
+
+```bash
+npm ci
+npm run build          # genera .next/standalone: el servidor ya empaquetado
+npm run db:migrate
+npm run db:seed
+npm run clave juan.garcia@cofinet.com.au
+npm start
+```
+
+Para que la app quede escuchando en la red y arranque sola con el servidor, se ejecuta la
+salida *standalone* como servicio:
+
+- **Windows:** registre `node .next\standalone\server.js` como servicio con
+  [NSSM](https://nssm.cc/) o con el Programador de tareas (*Al iniciar el equipo*,
+  ejecutar aunque no haya sesión iniciada). Defina las variables de entorno a nivel de
+  sistema, más `PORT=8080` y `HOSTNAME=0.0.0.0`.
+- **Linux:** cree una unidad de systemd con `ExecStart=/usr/bin/node /ruta/.next/standalone/server.js`
+  y `Environment=` para cada variable.
+
+Al compilar, copie también `.next/static` y `public` dentro de `.next/standalone/`
+(así lo hace el `Dockerfile`).
+
+### Inicio de sesión: local o Microsoft 365
+
+En una red interna **sin HTTPS**, Microsoft Entra ID no sirve: solo acepta URLs de
+redirección `https://` (salvo `localhost`), y además el servidor necesitaría salida a
+internet. Por eso la app trae dos modos, con `AUTH_MODE`:
+
+| `AUTH_MODE` | Cómo entra la gente | Requisitos |
+|---|---|---|
+| `local` *(por defecto en on-premise)* | Correo y contraseña guardados en la base de datos de la app | Ninguno |
+| `entra` | Cuenta de Microsoft 365 | HTTPS con certificado de confianza + salida a internet |
+| `ambos` | Ambas opciones en la pantalla de entrada | Los de `entra` |
+
+Con `local`:
+
+- Las contraseñas se guardan con **scrypt** y sal aleatoria; nunca en texto plano.
+- Quien recibe una clave temporal **debe cambiarla** antes de poder usar la app.
+- Tras 5 intentos fallidos seguidos la cuenta se bloquea 15 minutos
+  (ajustable con `MAX_INTENTOS_LOGIN` y `MINUTOS_BLOQUEO_LOGIN`).
+- Un administrador restablece claves desde **Aprobadores**. Si nadie puede entrar, Sistemas
+  lo resuelve desde el servidor con `npm run clave <correo>`.
+
+Cuando más adelante quieran pasar a Microsoft 365, basta publicar la app por HTTPS
+(un proxy inverso con certificado de la CA interna de la empresa), registrar
+`https://facturas.cofinet.local/api/auth/callback` en Azure y cambiar `AUTH_MODE=ambos`.
+No hay que migrar datos: la autorización ya sale de la tabla `aprobadores` en los dos casos.
+
+### Respaldos
+
+La app pasa a ser el registro oficial de las facturas, así que el respaldo deja de ser
+opcional.
+
+```bash
+# Con Docker
+docker compose exec -T base-de-datos pg_dump -U cofinet -Fc cofinet_facturas > respaldos/facturas.dump
+
+# Sin Docker (conserva 30 días y borra los más viejos)
+npm run db:respaldo
+```
+
+Prográmelo a diario con el Programador de tareas de Windows o con `cron`, y copie la
+carpeta `respaldos/` a otra máquina o al NAS. Los documentos soporte viven aparte: con
+Docker, en el volumen `cofinet-facturas-adjuntos`; sin Docker, en `STORAGE_LOCAL_DIR`.
+Respalde ambas cosas.
+
+Para restaurar:
+
+```bash
+pg_restore --clean --if-exists -d "$DATABASE_URL" respaldos/facturas-<fecha>.dump
+```
+
+### Recomendaciones de red
+
+- Asigne al servidor una IP fija y, si es posible, un nombre DNS interno
+  (`facturas.cofinet.local`): así `APP_URL` no cambia si se mueve el servidor.
+- Publique el puerto solo hacia la VLAN de usuarios; no lo exponga al router.
+- La app confía en la red interna: no hay HTTPS por defecto, de modo que las contraseñas
+  viajan por la LAN sin cifrar. Si esto preocupa, ponga delante un proxy inverso
+  (Caddy, nginx o IIS) con un certificado de la CA interna; la app funciona igual.
+- Si el servidor es también el de OASIS, use una máquina virtual aparte para no competir
+  por recursos.
+
+### Salud del servicio
+
+`GET /api/salud` responde `{"estado":"ok","baseDeDatos":"ok"}` cuando todo está bien, y
+503 si la app no alcanza la base. Sirve para el monitoreo de Sistemas y lo usa el
+`HEALTHCHECK` de Docker.
+
+### Más adelante, si lo quieren publicar
+
+El proyecto también corre tal cual en Vercel, Railway o Render con PostgreSQL gestionado.
+En ese caso use `STORAGE_DRIVER=azure` para los adjuntos (el disco de esos servicios no es
+persistente) y `AUTH_MODE=entra`, que allí sí tiene HTTPS.
 
 ## Estructura
 
 ```
 db/migrations/      Esquema SQL versionado
-scripts/            Migraciones y semilla (tsx)
+scripts/            Migraciones, semilla, contraseñas y respaldos (Node, sin compilar)
 src/app/            Rutas, páginas y server actions
   (app)/            Área autenticada: facturas, contabilizar, importar, auditoría, aprobadores
   api/              Autenticación Microsoft, adjuntos y exportación CSV
 src/components/     Componentes de interfaz
 src/lib/            Dominio: BD, sesión, permisos, facturas, auditoría, importación
   import/           Lectura y normalización de Excel y CSV
-tests/              Pruebas unitarias
+tests/              Pruebas unitarias y de integración
+Dockerfile          Imagen de la aplicación
+docker-compose.yml  App + PostgreSQL para el servidor de la empresa
 ```

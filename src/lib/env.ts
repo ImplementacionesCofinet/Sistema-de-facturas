@@ -46,6 +46,37 @@ export const env = {
   },
 
   /**
+   * Como inicia sesion la gente:
+   *   'entra' -> solo Microsoft 365 (requiere HTTPS y salida a internet)
+   *   'local' -> solo usuario y contrasena guardados en esta base de datos
+   *   'ambos' -> se ofrecen las dos opciones
+   * Por defecto: 'entra' si hay credenciales de Microsoft, 'local' si no.
+   */
+  get authMode(): 'entra' | 'local' | 'ambos' {
+    const valor = (process.env.AUTH_MODE || '').trim().toLowerCase();
+    if (valor === 'entra' || valor === 'local' || valor === 'ambos') return valor;
+    return this.msConfigured ? 'entra' : 'local';
+  },
+
+  get localAuthEnabled(): boolean {
+    return this.authMode === 'local' || this.authMode === 'ambos';
+  },
+
+  get entraAuthEnabled(): boolean {
+    return (this.authMode === 'entra' || this.authMode === 'ambos') && this.msConfigured;
+  },
+
+  /** Intentos fallidos seguidos antes de bloquear temporalmente la cuenta. */
+  get maxIntentosLogin(): number {
+    return Number(process.env.MAX_INTENTOS_LOGIN || 5);
+  },
+
+  /** Minutos que dura el bloqueo por intentos fallidos. */
+  get minutosBloqueoLogin(): number {
+    return Number(process.env.MINUTOS_BLOQUEO_LOGIN || 15);
+  },
+
+  /**
    * Login local sin Microsoft, solo para desarrollo.
    * NUNCA debe quedar activo en produccion.
    */

@@ -1,5 +1,5 @@
 import { Client } from 'pg';
-import { cargarEnv } from './env-file';
+import { cargarEnv } from './env-file.mjs';
 
 cargarEnv();
 
@@ -19,14 +19,8 @@ const AREAS = [
   'TRILLA',
 ];
 
-interface SemillaAprobador {
-  area: string;
-  nombre: string;
-  correo: string;
-  rol: 'APROBADOR' | 'CONTABILIDAD' | 'ADMIN';
-}
-
-const APROBADORES: SemillaAprobador[] = [
+/** rol: APROBADOR | CONTABILIDAD | ADMIN */
+const APROBADORES = [
   { area: 'CONTABILIDAD', nombre: 'Contabilidad Cofinet', correo: 'contabilidad@cofinet.com.au', rol: 'CONTABILIDAD' },
   { area: 'ADMINISTRACION', nombre: 'Jefe de Administracion', correo: 'administracion@cofinet.com.au', rol: 'APROBADOR' },
   { area: 'COMERCIAL', nombre: 'Jefe Comercial', correo: 'comercial@cofinet.com.au', rol: 'APROBADOR' },
@@ -36,7 +30,7 @@ const APROBADORES: SemillaAprobador[] = [
   { area: 'TRILLA', nombre: 'Jefe de Trilla', correo: 'trilla@cofinet.com.au', rol: 'APROBADOR' },
 ];
 
-async function main(): Promise<void> {
+async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error('Falta DATABASE_URL (ver .env.example).');
 

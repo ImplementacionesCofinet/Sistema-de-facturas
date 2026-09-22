@@ -17,6 +17,7 @@ export async function crearSesion(user: SessionUser): Promise<void> {
     nombre: user.nombre,
     rol: user.rol,
     areas: user.areas,
+    debeCambiarClave: user.debeCambiarClave ?? false,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -51,6 +52,7 @@ export async function obtenerSesion(): Promise<SessionUser | null> {
       nombre: String(payload.nombre),
       rol: payload.rol as Rol,
       areas: Array.isArray(payload.areas) ? (payload.areas as string[]) : [],
+      debeCambiarClave: payload.debeCambiarClave === true,
     };
   } catch {
     return null;

@@ -85,6 +85,8 @@ export interface SessionUser {
   rol: Rol;
   /** Areas que puede ver y aprobar. Vacio para CONTABILIDAD/ADMIN (ven todo). */
   areas: string[];
+  /** true cuando entro con una clave temporal y debe cambiarla antes de seguir. */
+  debeCambiarClave?: boolean;
 }
 
 /** CONTABILIDAD y ADMIN ven todas las areas y pueden importar/contabilizar. */

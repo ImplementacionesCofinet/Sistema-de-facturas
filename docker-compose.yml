@@ -1,0 +1,62 @@
+# =============================================================================
+# Despliegue en la red interna de Cofinet.
+#
+#   docker compose up -d                          arranca todo
+#   docker compose run --rm app node scripts/migrate.mjs   crea las tablas
+#
+# La app queda publicada en el puerto 8080 del servidor. Nada sale a internet.
+# =============================================================================
+
+services:
+  base-de-datos:
+    image: postgres:16-alpine
+    container_name: cofinet-facturas-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cofinet_facturas}
+      POSTGRES_USER: ${POSTGRES_USER:-cofinet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en el archivo .env}
+      # Intercalacion y codificacion adecuadas para textos en espanol.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8'
+      TZ: America/Bogota
+    volumes:
+      - datos-postgres:/var/lib/postgresql/data
+      - ./respaldos:/respaldos
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-cofinet} -d ${POSTGRES_DB:-cofinet_facturas}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Sin "ports": la base solo es accesible desde la app, no desde la red.
+
+  app:
+    build: .
+    image: cofinet/facturas:1.0.0
+    container_name: cofinet-facturas-app
+    restart: unless-stopped
+    depends_on:
+      base-de-datos:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cofinet}:${POSTGRES_PASSWORD}@base-de-datos:5432/${POSTGRES_DB:-cofinet_facturas}
+      APP_URL: ${APP_URL:?Defina APP_URL con la direccion del servidor en la red}
+      SESSION_SECRET: ${SESSION_SECRET:?Defina SESSION_SECRET en el archivo .env}
+      AUTH_MODE: ${AUTH_MODE:-local}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-}
+      MS_TENANT_ID: ${MS_TENANT_ID:-}
+      MS_CLIENT_ID: ${MS_CLIENT_ID:-}
+      MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_DIR: /datos/adjuntos
+      TZ: America/Bogota
+    ports:
+      - '${PUERTO:-8080}:3000'
+    volumes:
+      - adjuntos:/datos/adjuntos
+
+volumes:
+  datos-postgres:
+    name: cofinet-facturas-datos
+  adjuntos:
+    name: cofinet-facturas-adjuntos

@@ -1,5 +1,5 @@
 /** Carga .env antes de usar process.env en los scripts de linea de comandos. */
-export function cargarEnv(): void {
+export function cargarEnv() {
   for (const archivo of ['.env.local', '.env']) {
     try {
       process.loadEnvFile(archivo);

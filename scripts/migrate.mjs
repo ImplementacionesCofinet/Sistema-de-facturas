@@ -1,13 +1,13 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Client } from 'pg';
-import { cargarEnv } from './env-file';
+import { cargarEnv } from './env-file.mjs';
 
 cargarEnv();
 
 const DIRECTORIO = path.resolve('db/migrations');
 
-async function main(): Promise<void> {
+async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error('Falta DATABASE_URL (ver .env.example).');
 
@@ -30,9 +30,7 @@ async function main(): Promise<void> {
   `);
 
   const aplicadas = new Set(
-    (await client.query<{ nombre: string }>('SELECT nombre FROM _migraciones')).rows.map(
-      (f) => f.nombre,
-    ),
+    (await client.query('SELECT nombre FROM _migraciones')).rows.map((f) => f.nombre),
   );
 
   const archivos = (await readdir(DIRECTORIO)).filter((f) => f.endsWith('.sql')).sort();
