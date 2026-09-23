@@ -7,36 +7,75 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-crema text-marca-900 antialiased;
+  }
+  /* El foco tiene que verse: se navega mucho con teclado entre facturas. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-marca-500 ring-offset-2 ring-offset-crema;
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm
-           font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm
+           font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-cofinet-600 text-white hover:bg-cofinet-700;
+    @apply btn bg-marca-700 text-white hover:bg-marca-800;
   }
   .btn-secundario {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-100;
+    @apply btn border border-pizarra-200 bg-white text-marca-800 hover:bg-pizarra-50;
   }
   .btn-peligro {
-    @apply btn bg-red-600 text-white hover:bg-red-700;
+    @apply btn bg-tierra-600 text-white hover:bg-tierra-800;
   }
+
   .campo {
-    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm
-           text-slate-800 shadow-sm outline-none focus:border-cofinet-500
-           focus:ring-2 focus:ring-cofinet-200 disabled:bg-slate-100;
+    @apply w-full rounded-md border border-pizarra-200 bg-white px-3 py-2 text-sm
+           text-marca-900 shadow-sm outline-none transition-colors
+           placeholder:text-pizarra-400
+           focus:border-marca-500 focus:ring-2 focus:ring-marca-200
+           disabled:bg-pizarra-50;
   }
   .etiqueta {
-    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-pizarra-500;
   }
+
   .tarjeta {
-    @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+    @apply rounded-lg border border-pizarra-100 bg-white shadow-sm;
   }
+  .titulo-seccion {
+    @apply text-xs font-semibold uppercase tracking-wider text-pizarra-500;
+  }
+
   .chip {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  .aviso-ok {
+    @apply rounded-md border border-marca-200 bg-marca-100 px-3 py-2 text-sm text-marca-700;
+  }
+  .aviso-error {
+    @apply rounded-md border border-tierra-200 bg-tierra-50 px-3 py-2 text-sm text-tierra-600;
+  }
+  .aviso-info {
+    @apply rounded-md border border-tierra-200 bg-tierra-100 px-3 py-2 text-sm text-tierra-700;
+  }
+
+  /* Tablas: encabezado calido y filas que se siguen bien con la vista. */
+  .tabla {
+    @apply w-full text-sm;
+  }
+  .tabla thead {
+    @apply border-b border-pizarra-200 bg-pizarra-50 text-left;
+  }
+  .tabla th {
+    @apply px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-pizarra-500;
+  }
+  .tabla tbody tr {
+    @apply border-b border-pizarra-100 transition-colors last:border-0 hover:bg-marca-50;
+  }
+  .tabla td {
+    @apply px-3 py-2.5;
   }
 }

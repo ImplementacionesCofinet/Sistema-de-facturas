@@ -72,8 +72,8 @@ export default async function PaginaFacturas({ searchParams }: { searchParams: B
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Facturas</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-xl font-bold text-marca-900">Facturas</h1>
+          <p className="text-sm text-pizarra-500">
             {esContabilidad(user)
               ? 'Todas las areas de la compania.'
               : `Area${user.areas.length > 1 ? 's' : ''}: ${user.areas.join(', ') || 'sin asignar'}`}
@@ -97,7 +97,7 @@ export default async function PaginaFacturas({ searchParams }: { searchParams: B
       <TablaFacturas facturas={listado.facturas} />
 
       {totalPaginas > 1 && (
-        <div className="flex items-center justify-between text-sm text-slate-600">
+        <div className="flex items-center justify-between text-sm text-pizarra-500">
           <p>
             {listado.total} facturas · pagina {listado.pagina} de {totalPaginas}
           </p>

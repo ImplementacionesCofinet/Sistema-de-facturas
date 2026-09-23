@@ -29,9 +29,12 @@ export function Nav({ user }: { user: SessionUser }) {
   );
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="bg-marca-800 text-crema shadow-sm">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-        <Link href="/facturas" className="text-lg font-bold tracking-tight text-cofinet-700">
+        <Link
+          href="/facturas"
+          className="text-lg font-bold tracking-[0.2em] text-crema hover:text-white"
+        >
           COFINET
         </Link>
 
@@ -44,8 +47,8 @@ export function Nav({ user }: { user: SessionUser }) {
                 href={enlace.href}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   activo
-                    ? 'bg-cofinet-50 text-cofinet-700'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-marca-700 text-white'
+                    : 'text-marca-200 hover:bg-marca-700/60 hover:text-white'
                 }`}
               >
                 {enlace.texto}
@@ -56,15 +59,19 @@ export function Nav({ user }: { user: SessionUser }) {
 
         <div className="flex items-center gap-3">
           <div className="text-right leading-tight">
-            <p className="text-sm font-medium text-slate-700">{user.nombre}</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-medium text-crema">{user.nombre}</p>
+            <p className="text-xs text-marca-300">
               {user.rol === 'APROBADOR'
                 ? user.areas.join(' · ') || 'Sin area asignada'
                 : user.rol}
             </p>
           </div>
           <form action="/api/auth/logout" method="post">
-            <button type="submit" className="btn-secundario px-2.5 py-1.5 text-xs">
+            <button
+              type="submit"
+              className="rounded-md border border-marca-400/50 px-3 py-1.5 text-xs font-semibold
+                         text-crema transition-colors hover:bg-marca-700"
+            >
               Salir
             </button>
           </form>

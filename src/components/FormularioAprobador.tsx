@@ -70,8 +70,8 @@ export function FormularioAprobador({ areas }: { areas: string[] }) {
           role="status"
           className={`sm:col-span-2 lg:col-span-5 rounded-md px-3 py-2 text-sm ${
             estado.ok
-              ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border border-red-200 bg-red-50 text-red-700'
+              ? 'border border-marca-200 bg-marca-100 text-marca-700'
+              : 'border border-tierra-200 bg-tierra-50 text-tierra-600'
           }`}
         >
           {estado.mensaje}

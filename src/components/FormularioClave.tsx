@@ -10,7 +10,7 @@ export function FormularioCambiarClave({ obligatorio }: { obligatorio: boolean }
   if (estado.ok) {
     return (
       <div className="space-y-4">
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="aviso-ok">
           {estado.mensaje}
         </p>
         <a href="/facturas" className="btn-primary w-full">
@@ -23,7 +23,7 @@ export function FormularioCambiarClave({ obligatorio }: { obligatorio: boolean }
   return (
     <form action={accion} className="space-y-4">
       {obligatorio && (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="aviso-info">
           Entro con una clave temporal. Debe cambiarla antes de continuar.
         </p>
       )}
@@ -40,7 +40,7 @@ export function FormularioCambiarClave({ obligatorio }: { obligatorio: boolean }
           Contrasena nueva
         </label>
         <input id="nueva" name="nueva" type="password" required autoComplete="new-password" className="campo" />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-pizarra-500">
           Minimo 10 caracteres, combinando letras y numeros.
         </p>
       </div>
@@ -53,7 +53,7 @@ export function FormularioCambiarClave({ obligatorio }: { obligatorio: boolean }
       </div>
 
       {estado.mensaje && (
-        <p role="status" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="status" className="aviso-error">
           {estado.mensaje}
         </p>
       )}
@@ -82,12 +82,12 @@ export function BotonClaveTemporal({ correo, tieneClave }: { correo: string; tie
       </form>
 
       {estado.claveTemporal && (
-        <p className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
+        <p className="rounded border border-marca-200 bg-marca-100 px-2 py-1 text-xs text-marca-700">
           Clave temporal: <code className="font-bold">{estado.claveTemporal}</code>
         </p>
       )}
       {estado.mensaje && !estado.ok && (
-        <p className="text-xs text-red-600">{estado.mensaje}</p>
+        <p className="text-xs text-tierra-600">{estado.mensaje}</p>
       )}
     </div>
   );

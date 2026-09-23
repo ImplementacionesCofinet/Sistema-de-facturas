@@ -33,18 +33,18 @@ export default async function Login({
   const entra = env.entraAuthEnabled;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cofinet-800 via-cofinet-700 to-cofinet-900 px-4 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-marca-800 via-marca-700 to-marca-900 px-4 py-10">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
         <div className="mb-6 text-center">
-          <p className="text-2xl font-bold tracking-tight text-cofinet-700">COFINET</p>
-          <h1 className="mt-2 text-lg font-semibold text-slate-800">Aprobacion de facturas</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="text-2xl font-bold tracking-[0.2em] text-marca-700">COFINET</p>
+          <h1 className="mt-2 text-lg font-semibold text-marca-800">Aprobacion de facturas</h1>
+          <p className="mt-1 text-sm text-pizarra-500">
             Facturas electronicas DIAN y cuentas de cobro
           </p>
         </div>
 
         {mensaje && (
-          <p className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mb-5 aviso-error">
             {mensaje}
           </p>
         )}
@@ -88,9 +88,9 @@ export default async function Login({
 
         {local && entra && (
           <div className="my-6 flex items-center gap-3">
-            <span className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs uppercase tracking-wide text-slate-400">o</span>
-            <span className="h-px flex-1 bg-slate-200" />
+            <span className="h-px flex-1 bg-pizarra-200" />
+            <span className="text-xs uppercase tracking-wide text-pizarra-500">o</span>
+            <span className="h-px flex-1 bg-pizarra-200" />
           </div>
         )}
 
@@ -101,7 +101,7 @@ export default async function Login({
         )}
 
         {!local && !entra && (
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p className="aviso-info">
             No hay ningun metodo de inicio de sesion configurado. Defina AUTH_MODE=local, o
             configure MS_TENANT_ID, MS_CLIENT_ID y MS_CLIENT_SECRET.
           </p>
@@ -111,7 +111,7 @@ export default async function Login({
           <form
             action="/api/auth/dev"
             method="post"
-            className="mt-6 border-t border-slate-200 pt-6"
+            className="mt-6 border-t border-pizarra-200 pt-6"
           >
             <label className="etiqueta" htmlFor="correo-dev">
               Acceso de desarrollo
@@ -129,13 +129,13 @@ export default async function Login({
                 Entrar
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-pizarra-500">
               Solo disponible con DEV_AUTH=true fuera de produccion.
             </p>
           </form>
         )}
 
-        <p className="mt-8 text-center text-xs text-slate-400">
+        <p className="mt-8 text-center text-xs text-pizarra-400">
           Si olvido su contrasena, solicite a Sistemas que la restablezca.
         </p>
       </div>

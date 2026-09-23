@@ -61,8 +61,8 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Auditoria</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-xl font-bold text-marca-900">Auditoria</h1>
+        <p className="text-sm text-pizarra-500">
           Traza completa de cambios: quien, cuando, que campo y con que valores. {total} registro(s).
         </p>
       </div>
@@ -85,7 +85,7 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
 
       <div className="tarjeta overflow-x-auto">
         <table className="w-full min-w-[980px] text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <thead className="border-b border-pizarra-200 bg-pizarra-50 text-left text-xs uppercase tracking-wide text-pizarra-500">
             <tr>
               <th className="px-3 py-2 font-semibold">Fecha y hora</th>
               <th className="px-3 py-2 font-semibold">Usuario</th>
@@ -97,25 +97,25 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
               <th className="px-3 py-2 font-semibold">Despues</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-pizarra-100">
             {registros.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-slate-500">
+                <td colSpan={8} className="px-3 py-10 text-center text-pizarra-500">
                   No hay registros de auditoria.
                 </td>
               </tr>
             ) : (
               registros.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-3 py-2 tabular-nums text-slate-600">
+                <tr key={r.id} className="hover:bg-pizarra-50">
+                  <td className="whitespace-nowrap px-3 py-2 tabular-nums text-pizarra-500">
                     {fechaHora(r.fecha_cambio)}
                   </td>
-                  <td className="px-3 py-2 text-slate-700">{r.usuario ?? '—'}</td>
+                  <td className="px-3 py-2 text-pizarra-600">{r.usuario ?? '—'}</td>
                   <td className="max-w-[180px] truncate px-3 py-2">
                     {r.factura_id ? (
                       <Link
                         href={`/facturas/${r.factura_id}`}
-                        className="text-cofinet-700 hover:underline"
+                        className="text-marca-700 hover:underline"
                       >
                         {r.id_unico_ref ?? 'Ver'}
                       </Link>
@@ -123,15 +123,15 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
                       (r.id_unico_ref ?? '—')
                     )}
                   </td>
-                  <td className="max-w-[180px] truncate px-3 py-2 text-slate-600">
+                  <td className="max-w-[180px] truncate px-3 py-2 text-pizarra-500">
                     {r.tercero ?? '—'}
                   </td>
-                  <td className="px-3 py-2 text-slate-600">{r.area ?? '—'}</td>
-                  <td className="px-3 py-2 font-medium text-slate-700">{r.campo_modificado}</td>
-                  <td className="max-w-[180px] truncate px-3 py-2 text-slate-500">
+                  <td className="px-3 py-2 text-pizarra-500">{r.area ?? '—'}</td>
+                  <td className="px-3 py-2 font-medium text-pizarra-600">{r.campo_modificado}</td>
+                  <td className="max-w-[180px] truncate px-3 py-2 text-pizarra-500">
                     {r.valor_anterior ?? '—'}
                   </td>
-                  <td className="max-w-[180px] truncate px-3 py-2 text-slate-800">
+                  <td className="max-w-[180px] truncate px-3 py-2 text-marca-800">
                     {r.valor_nuevo ?? '—'}
                   </td>
                 </tr>
@@ -142,7 +142,7 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
       </div>
 
       {totalPaginas > 1 && (
-        <div className="flex items-center justify-between text-sm text-slate-600">
+        <div className="flex items-center justify-between text-sm text-pizarra-500">
           <p>
             Pagina {pagina} de {totalPaginas}
           </p>

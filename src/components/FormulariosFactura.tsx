@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useRef } from 'react';
 import {
   accionAdjuntar,
   accionAsignarArea,
@@ -18,8 +18,8 @@ function Aviso({ estado }: { estado: EstadoAccion }) {
       role="status"
       className={`rounded-md px-3 py-2 text-sm ${
         estado.ok
-          ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
-          : 'border border-red-200 bg-red-50 text-red-700'
+          ? 'border border-marca-200 bg-marca-100 text-marca-700'
+          : 'border border-tierra-200 bg-tierra-50 text-tierra-600'
       }`}
     >
       {estado.mensaje}
@@ -30,10 +30,21 @@ function Aviso({ estado }: { estado: EstadoAccion }) {
 /** Aprobar o rechazar, con observaciones y documento soporte. */
 export function FormularioDecision({ factura }: { factura: Factura }) {
   const [estado, accion, enviando] = useActionState(accionDecidir, ESTADO_INICIAL);
+  const decisionRef = useRef<HTMLInputElement>(null);
+
+  // La decision viaja en un campo propio del formulario en vez de depender del
+  // name/value del boton pulsado. Ese dato lo agrega el navegador al enviar, y
+  // si por lo que sea no llega, el servidor responde "Debe indicar si aprueba o
+  // rechaza" aunque la persona si haya pulsado. Escribirlo aqui, en el mismo
+  // clic y antes de que se envie el formulario, no depende de ese mecanismo.
+  const marcarDecision = (valor: 'APROBADA' | 'RECHAZADA') => {
+    if (decisionRef.current) decisionRef.current.value = valor;
+  };
 
   return (
     <form action={accion} className="space-y-4">
       <input type="hidden" name="id" value={factura.id} />
+      <input type="hidden" name="decision" ref={decisionRef} defaultValue="" />
 
       <div>
         <label className="etiqueta" htmlFor="observaciones">
@@ -58,9 +69,9 @@ export function FormularioDecision({ factura }: { factura: Factura }) {
           name="soporte"
           type="file"
           accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.xls,.csv,.doc,.docx,.txt,.zip,.xml"
-          className="campo file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-sm"
+          className="campo file:mr-3 file:rounded file:border-0 file:bg-pizarra-100 file:px-3 file:py-1 file:text-sm"
         />
-        <p className="mt-1 text-xs text-slate-500">Opcional. Maximo 20 MB.</p>
+        <p className="mt-1 text-xs text-pizarra-500">Opcional. Maximo 20 MB.</p>
       </div>
 
       <Aviso estado={estado} />
@@ -68,8 +79,7 @@ export function FormularioDecision({ factura }: { factura: Factura }) {
       <div className="flex flex-wrap gap-2">
         <button
           type="submit"
-          name="decision"
-          value="APROBADA"
+          onClick={() => marcarDecision('APROBADA')}
           disabled={enviando}
           className="btn-primary"
         >
@@ -77,8 +87,7 @@ export function FormularioDecision({ factura }: { factura: Factura }) {
         </button>
         <button
           type="submit"
-          name="decision"
-          value="RECHAZADA"
+          onClick={() => marcarDecision('RECHAZADA')}
           disabled={enviando}
           className="btn-peligro"
         >
@@ -119,7 +128,7 @@ export function FormularioSoporte({ factura }: { factura: Factura }) {
           name="soporte"
           type="file"
           accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.xls,.csv,.doc,.docx,.txt,.zip,.xml"
-          className="campo file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-sm"
+          className="campo file:mr-3 file:rounded file:border-0 file:bg-pizarra-100 file:px-3 file:py-1 file:text-sm"
         />
       </div>
 
@@ -162,12 +171,12 @@ export function FormularioComprobante({
         />
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-pizarra-600">
         <input
           type="checkbox"
           name="cbte_ok"
           defaultChecked={factura.cbte_ok}
-          className="h-4 w-4 rounded border-slate-300 text-cofinet-600 focus:ring-cofinet-400"
+          className="h-4 w-4 rounded border-pizarra-200 text-marca-700 focus:ring-marca-400"
         />
         Contabilizada (OK)
       </label>
