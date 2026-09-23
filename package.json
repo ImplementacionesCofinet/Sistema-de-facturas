@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.26.0",
-    "exceljs": "^4.4.0",
+    "fast-xml-parser": "^5.11.1",
+    "fflate": "^0.8.3",
     "jose": "^5.9.6",
     "next": "^15.1.6",
     "pg": "^8.13.1",

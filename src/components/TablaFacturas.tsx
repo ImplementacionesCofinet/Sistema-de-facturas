@@ -49,7 +49,7 @@ export function TablaFacturas({
               </td>
               <td className="px-3 py-2 tabular-nums text-slate-600">{f.nit ?? '—'}</td>
               <td className="px-3 py-2 tabular-nums text-slate-600">{fecha(f.fecha_emision)}</td>
-              <td className="px-3 py-2 text-right tabular-nums font-medium">{moneda(f.total)}</td>
+              <td className="px-3 py-2 text-right tabular-nums font-medium">{moneda(f.total, f.divisa)}</td>
               {mostrarArea && (
                 <td className="px-3 py-2 text-slate-600">
                   {f.area ?? <span className="text-amber-600">Sin asignar</span>}

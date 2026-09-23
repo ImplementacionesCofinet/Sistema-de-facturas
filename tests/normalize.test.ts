@@ -92,10 +92,29 @@ describe('numeroFactura', () => {
 });
 
 describe('idUnico', () => {
-  it('usa NIT_NumFactura para facturas electronicas', () => {
+  it('usa NIT y folio para facturas electronicas', () => {
+    // Del numero de factura se toma la parte numerica: la DIAN entrega
+    // prefijo mas folio ("FE1234") y el Excel de Cofinet solo el folio, de
+    // modo que ambas fuentes tienen que producir la misma llave.
     expect(
       N.idUnico({ nit: '900123456', numeroFactura: 'FE1234', fechaEmision: '2026-06-01', total: 100 }),
-    ).toBe('900123456_FE1234');
+    ).toBe('900123456_1234');
+  });
+
+  it('da la misma llave con prefijo y sin el', () => {
+    const conPrefijo = N.idUnico({
+      nit: '901570977', numeroFactura: 'FVE21642', fechaEmision: null, total: null,
+    });
+    const soloFolio = N.idUnico({
+      nit: '901570977', numeroFactura: '21642', fechaEmision: null, total: null,
+    });
+    expect(conPrefijo).toBe(soloFolio);
+  });
+
+  it('conserva el numero completo cuando no tiene digitos', () => {
+    expect(
+      N.idUnico({ nit: '900123456', numeroFactura: 'ABC', fechaEmision: null, total: null }),
+    ).toBe('900123456_ABC');
   });
 
   it('usa CC_NIT_Fecha_Total para cuentas de cobro', () => {

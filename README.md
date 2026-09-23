@@ -24,7 +24,7 @@ usuario, fecha y hora exacta, sin depender del historial de versiones de un arch
 | Base de datos | PostgreSQL (compatible con Supabase, Neon, Railway, Render) |
 | Autenticación | Usuario y contraseña locales, o Microsoft Entra ID (OAuth 2.0 + PKCE) |
 | Adjuntos | Azure Blob Storage o disco local |
-| Lectura de Excel | ExcelJS (.xlsx / .xlsm) y lector propio de CSV |
+| Lectura de Excel | Lector propio de `.xlsx` (fflate + fast-xml-parser) y de CSV |
 
 Sin ORM: SQL explícito sobre `pg`, con migraciones versionadas en `db/migrations/`.
 
@@ -278,15 +278,43 @@ En **Importar DIAN** se sube el archivo mensual. La app:
 - Interpreta montos en formato colombiano (`1.234.567,89`) y fechas `dd/mm/aaaa`.
 - Normaliza el NIT quitando puntos y dígito de verificación.
 
+### Los dos orígenes
+
+La app lee dos archivos distintos y los reconoce sola:
+
+| | Reporte de la DIAN | Excel histórico de Cofinet |
+|---|---|---|
+| Columnas del tercero | `NIT Emisor`, `Nombre Emisor` | `Nit`, `TERCEROS` |
+| Número | `Prefijo` + `Folio` | solo `Folio` |
+| `Estado` | acuse del documento electrónico | decisión del jefe de área |
+| Trae además | `CUFE/CUDE`, `Divisa`, impuestos | `Area`, `Cbte`, `Observaciones` |
+
+Dos diferencias importan especialmente:
+
+- **La columna `Estado` significa cosas distintas.** En el reporte de la DIAN dice
+  *"Aprobado con notificación"*, que solo indica que el documento se recibió. La app
+  detecta que el archivo es de la DIAN (por las columnas del receptor y el CUFE) e ignora
+  esa columna: toda factura recién importada entra **PENDIENTE** de aprobar. Tomarla por
+  una aprobación daría por aprobadas todas las facturas del mes.
+- **La `Forma de Pago` de la DIAN es un código** (`1` contado, `2` crédito). Se traduce al
+  importar.
+
 ### Identificador único
 
 Evita duplicados entre importaciones sucesivas:
 
 | Caso | `id_unico` |
 |---|---|
-| Factura con número | `NIT_NumFactura` — ej. `900123456_SETP9900` |
+| Factura con número | `NIT_folio` — ej. `901570977_21642` |
 | Sin número pero con CUFE | `CUFE_<cufe>` |
 | Cuenta de cobro | `CC_NIT_Fecha_Total` — ej. `CC_10203040_2026-06-25_1500000.00` |
+
+Del número de factura se toma **solo la parte numérica**. La DIAN entrega prefijo y folio
+(`FVE21642`) mientras que el Excel de Cofinet guarda únicamente el folio (`21642`): si la
+llave usara el texto completo, la importación mensual duplicaría las facturas ya cargadas
+en el histórico. El número completo se conserva igual para mostrarlo.
+
+Cuando una cuenta de cobro no trae fecha de emisión, se usa la de recepción.
 
 ### Dos modos
 
@@ -302,8 +330,15 @@ Si el archivo no trae área, la app reutiliza la última área con la que se cla
 mismo NIT. Los proveedores recurrentes quedan asignados solos; los nuevos aparecen como
 **Sin asignar** para que Contabilidad los clasifique.
 
-> La DIAN entrega `.xlsx`. Si en algún caso entrega `.xls` (formato antiguo), ábralo en
-> Excel y guárdelo como `.xlsx` antes de subirlo.
+### Lectura del archivo
+
+El reporte de la DIAN lo genera una herramienta que escribe el XML interno con prefijo de
+espacio de nombres (`<x:workbook>`). Las librerías habituales de Excel buscan las etiquetas
+sin prefijo y no encuentran ni las hojas, así que la app trae su propio lector de `.xlsx`
+que ignora el prefijo y sirve para los dos orígenes.
+
+> Si en algún caso la DIAN entrega un `.xls` (formato antiguo), ábralo en Excel y guárdelo
+> como `.xlsx` antes de subirlo.
 
 ## Modelo de datos
 

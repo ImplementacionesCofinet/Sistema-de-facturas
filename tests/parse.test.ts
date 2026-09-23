@@ -53,7 +53,7 @@ describe('normalizarMatriz', () => {
     expect(resultado.filas).toHaveLength(1);
 
     const fila = resultado.filas[0];
-    expect(fila.id_unico).toBe('900123456_SETP9900');
+    expect(fila.id_unico).toBe('900123456_9900');
     expect(fila.nit).toBe('900123456');
     expect(fila.tercero).toBe('CAFE DEL VALLE SAS');
     expect(fila.total).toBe(4500000);
@@ -204,6 +204,102 @@ describe('estructura real del Excel de Cofinet', () => {
        '6131.07', 'COMERCIO EXTERIOR', '', 'APROBADA', 'CP5639 - OK', '', '', ''],
     ]);
     expect(r.filas[0].total).toBe(6131.07);
+  });
+});
+
+describe('reporte de documentos recibidos de la DIAN', () => {
+  // Encabezados exactos del reporte que descarga Contabilidad del portal.
+  const encabezados = [
+    'Tipo de documento', 'CUFE/CUDE', 'Folio', 'Prefijo', 'Divisa',
+    'Forma de Pago', 'Medio de Pago', 'Fecha Emisión', 'Fecha Recepción',
+    'NIT Emisor', 'Nombre Emisor', 'NIT Receptor', 'Nombre Receptor',
+    'IVA', 'Total', 'Estado', 'Grupo',
+  ];
+
+  const fila = (cambios: Record<number, string> = {}) => {
+    const base = [
+      'Factura electrónica', 'abc123cufe', '21642', 'FVE', 'COP',
+      '2', 'ZZZ', '23-09-2026', '2026-09-23T11:30:41',
+      '901570977', 'INVERSIONES JCMD POLIETILENOS S.A.S.',
+      '901373083', 'INVERSORA ARCILAZA S.A.S.',
+      '82386.55', '516018.25', 'Aprobado con notificación', 'Recibido',
+    ];
+    for (const [i, v] of Object.entries(cambios)) base[Number(i)] = v;
+    return base;
+  };
+
+  it('reconoce el archivo como reporte de la DIAN', () => {
+    expect(normalizarMatriz([encabezados, fila()]).esDian).toBe(true);
+  });
+
+  it('NO toma el acuse de la DIAN por una aprobacion del jefe de area', () => {
+    // "Aprobado con notificación" solo dice que el documento se recibio.
+    // Tomarlo por una aprobacion daria por aprobadas todas las facturas del mes
+    // y se saltaria el proceso entero.
+    const r = normalizarMatriz([encabezados, fila()]);
+    expect(r.filas[0].estado).toBe('PENDIENTE');
+  });
+
+  it('tampoco toma un rechazo de la DIAN por un rechazo del area', () => {
+    const r = normalizarMatriz([encabezados, fila({ 15: 'Rechazado' })]);
+    expect(r.filas[0].estado).toBe('PENDIENTE');
+  });
+
+  it('traduce el codigo de forma de pago de la DIAN', () => {
+    expect(normalizarMatriz([encabezados, fila({ 5: '1' })]).filas[0].forma_pago).toBe('CONTADO');
+    expect(normalizarMatriz([encabezados, fila({ 5: '2' })]).filas[0].forma_pago).toBe('CREDITO');
+  });
+
+  it('toma al emisor como tercero, nunca al receptor', () => {
+    const f = normalizarMatriz([encabezados, fila()]).filas[0];
+    expect(f.tercero).toBe('INVERSIONES JCMD POLIETILENOS S.A.S.');
+    expect(f.nit).toBe('901570977');
+  });
+
+  it('guarda el CUFE y la divisa', () => {
+    const f = normalizarMatriz([encabezados, fila()]).filas[0];
+    expect(f.cufe).toBe('abc123cufe');
+    expect(f.divisa).toBe('COP');
+  });
+
+  it('arma el numero de factura con prefijo y folio', () => {
+    expect(normalizarMatriz([encabezados, fila()]).filas[0].n_factura).toBe('FVE21642');
+  });
+
+  it('distingue notas credito y documentos equivalentes', () => {
+    const nota = normalizarMatriz([encabezados, fila({ 0: 'Nota de crédito electrónica' })]);
+    expect(nota.filas[0].tipo_documento).toBe('NOTA_CREDITO');
+
+    const equivalente = normalizarMatriz([
+      encabezados,
+      fila({ 0: 'Documento equivalente - Transporte pasajeros terrestre' }),
+    ]);
+    expect(equivalente.filas[0].tipo_documento).toBe('OTRO');
+  });
+
+  it('el Excel de Cofinet no se confunde con el de la DIAN', () => {
+    const r = normalizarMatriz([
+      ['Folio', 'Nit', 'TERCEROS', 'Total', 'Fecha Emision', 'Area', 'Estado', 'Cbte'],
+      ['12760', '804005332', 'COOHILADOS', '48750000', '2026-08-01', 'PRODUCCION', 'APROBADA', 'FP-256 - OK'],
+    ]);
+    expect(r.esDian).toBe(false);
+    // Ahi "Estado" si es la decision del jefe de area.
+    expect(r.filas[0].estado).toBe('APROBADA');
+  });
+
+  it('la misma factura recibe la misma llave venga de la DIAN o del Excel', () => {
+    // La DIAN entrega prefijo y folio ("FVE21642"); el Excel de Cofinet guarda
+    // solo el folio. Si la llave no coincidiera, cada importacion mensual
+    // duplicaria las facturas ya cargadas en el historico.
+    const desdeDian = normalizarMatriz([encabezados, fila()]).filas[0];
+
+    const desdeCofinet = normalizarMatriz([
+      ['Folio', 'Nit', 'TERCEROS', 'Total', 'Fecha Emision'],
+      ['21642', '901570977', 'INVERSIONES JCMD', '516018.25', '2026-09-23'],
+    ]).filas[0];
+
+    expect(desdeDian.id_unico).toBe(desdeCofinet.id_unico);
+    expect(desdeDian.id_unico).toBe('901570977_21642');
   });
 });
 

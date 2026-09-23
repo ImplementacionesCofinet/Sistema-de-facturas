@@ -19,7 +19,7 @@ const CAMPOS_NUMERICOS = new Set(['total']);
 
 /** Datos que manda la DIAN: la app los refresca en cada importacion. */
 const CAMPOS_DIAN = [
-  'tipo_documento', 'n_factura', 'fra_abr', 'cufe', 'fecha_emision',
+  'tipo_documento', 'n_factura', 'fra_abr', 'cufe', 'divisa', 'fecha_emision',
   'fecha_recepcion', 'nit', 'tercero', 'total', 'mes_periodo',
 ] as const;
 
@@ -141,7 +141,7 @@ async function aplicarFila(
 ): Promise<'nueva' | 'actualizada' | 'sin cambios'> {
   const existente = (
     await client.query<Factura>(
-      `SELECT id, id_unico, tipo_documento, n_factura, fra_abr, cufe,
+      `SELECT id, id_unico, tipo_documento, n_factura, fra_abr, cufe, divisa,
               to_char(fecha_emision, 'YYYY-MM-DD') AS fecha_emision,
               fecha_recepcion, nit, tercero, total, area, estado, cbte, cbte_ok,
               observaciones, documento_ref, forma_pago, estado_pago, mes_periodo
@@ -155,15 +155,15 @@ async function aplicarFila(
     const insertada = (
       await client.query<Factura>(
         `INSERT INTO facturas
-           (id_unico, tipo_documento, n_factura, fra_abr, cufe, fecha_emision,
+           (id_unico, tipo_documento, n_factura, fra_abr, cufe, divisa, fecha_emision,
             fecha_recepcion, nit, tercero, total, area, estado, cbte, cbte_ok,
             observaciones, documento_ref, forma_pago, estado_pago, mes_periodo,
             importacion_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
          RETURNING id, id_unico, tercero, area`,
         [
           fila.id_unico, fila.tipo_documento, fila.n_factura, fila.fra_abr, fila.cufe,
-          fila.fecha_emision, fila.fecha_recepcion, fila.nit, fila.tercero, fila.total,
+          fila.divisa, fila.fecha_emision, fila.fecha_recepcion, fila.nit, fila.tercero, fila.total,
           area, fila.estado, fila.cbte, fila.cbte_ok, fila.observaciones,
           fila.documento_ref, fila.forma_pago, fila.estado_pago, fila.mes_periodo,
           ctx.importacionId,

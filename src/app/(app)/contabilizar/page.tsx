@@ -62,7 +62,7 @@ export default async function PaginaContabilizar() {
                     {fecha(f.fecha_emision)}
                   </td>
                   <td className="px-3 py-3 text-right tabular-nums font-medium">
-                    {moneda(f.total)}
+                    {moneda(f.total, f.divisa)}
                   </td>
                   <td className="px-3 py-3 text-slate-600">{f.area ?? '—'}</td>
                   <td className="px-3 py-3 text-xs text-slate-600">

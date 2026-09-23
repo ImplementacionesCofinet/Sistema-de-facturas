@@ -15,6 +15,7 @@ const COLUMNAS: { titulo: string; campo: string }[] = [
   { titulo: 'NIT', campo: 'nit' },
   { titulo: 'Tercero', campo: 'tercero' },
   { titulo: 'Total', campo: 'total' },
+  { titulo: 'Divisa', campo: 'divisa' },
   { titulo: 'Area', campo: 'area' },
   { titulo: 'Estado', campo: 'estado' },
   { titulo: 'Cbte', campo: 'cbte' },

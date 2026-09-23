@@ -29,7 +29,8 @@ export type CampoCanonico =
   | 'documento_ref'
   | 'forma_pago'
   | 'estado_pago'
-  | 'tipo_documento';
+  | 'tipo_documento'
+  | 'divisa';
 
 /** minusculas, sin tildes, sin puntuacion, espacios colapsados. */
 export function normalizarEncabezado(valor: unknown): string {
@@ -82,7 +83,25 @@ const ALIAS: Record<CampoCanonico, string[]> = {
   forma_pago: ['forma de pago', 'forma pago', 'medio de pago', 'medio pago'],
   estado_pago: ['estado pago', 'estado de pago', 'pago', 'estado del pago'],
   tipo_documento: ['tipo de documento', 'tipo documento', 'tipo', 'clase de documento'],
+  divisa: ['divisa', 'moneda'],
 };
+
+/**
+ * Distingue el reporte de la DIAN del Excel propio de Cofinet.
+ *
+ * Importa porque la columna "Estado" significa cosas distintas en cada uno: en
+ * el de Cofinet es la decision del jefe de area (APROBADA / RECHAZADA), pero en
+ * el de la DIAN es el acuse del documento electronico ("Aprobado con
+ * notificacion"), que no dice nada sobre si la compania autorizo el pago.
+ * Tomarlo por una aprobacion daria por aprobadas todas las facturas del mes.
+ */
+export function esReporteDian(filaEncabezados: unknown[]): boolean {
+  const nombres = filaEncabezados.map(normalizarEncabezado);
+  const tiene = (n: string) => nombres.includes(n);
+
+  // Solo el reporte de la DIAN identifica al receptor y agrupa por acuse.
+  return tiene('nit receptor') || tiene('nombre receptor') || (tiene('cufe cude') && tiene('grupo'));
+}
 
 const INDICE: Map<string, CampoCanonico> = (() => {
   const mapa = new Map<string, CampoCanonico>();

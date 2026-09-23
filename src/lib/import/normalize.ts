@@ -165,6 +165,7 @@ export function tipoDocumento(valor: unknown, tieneNumeroFactura: boolean): Tipo
   if (s.includes('cuenta de cobro') || s.includes('cuenta cobro')) return 'CUENTA_COBRO';
   if (s.includes('nota credito') || s.includes('nota de credito')) return 'NOTA_CREDITO';
   if (s.includes('nota debito') || s.includes('nota de debito')) return 'NOTA_DEBITO';
+  if (s.includes('documento equivalente')) return 'OTRO';
   if (s.includes('factura')) return 'FACTURA';
   return tieneNumeroFactura ? 'FACTURA' : 'CUENTA_COBRO';
 }
@@ -205,6 +206,26 @@ export function booleano(valor: unknown): boolean {
   return ['OK', 'SI', 'SÍ', 'TRUE', 'X', '1', 'VERDADERO', 'YES'].includes(s);
 }
 
+/**
+ * La DIAN no escribe la forma de pago, manda su codigo: 1 contado, 2 credito.
+ * Sin traducirlo, en la app aparece un "2" que no le dice nada a nadie.
+ */
+export function formaPagoDian(valor: unknown): string | null {
+  const s = texto(valor);
+  if (!s) return null;
+  if (s === '1') return 'CONTADO';
+  if (s === '2') return 'CREDITO';
+  return s;
+}
+
+/** Codigo de divisa en mayusculas (COP, USD, EUR...). */
+export function divisa(valor: unknown): string | null {
+  const s = texto(valor);
+  if (!s) return null;
+  const codigo = s.toUpperCase().replace(/[^A-Z]/g, '');
+  return /^[A-Z]{3}$/.test(codigo) ? codigo : null;
+}
+
 /** Area en mayusculas y sin espacios sobrantes, o null. */
 export function area(valor: unknown): string | null {
   const s = texto(valor);
@@ -231,7 +252,12 @@ export function idUnico(params: {
   const nitNorm = params.nit ?? 'SINNIT';
 
   if (params.numeroFactura) {
-    return `${nitNorm}_${params.numeroFactura}`;
+    // La DIAN entrega prefijo y folio ("FVE21642") mientras que el Excel de
+    // Cofinet guarda solo el folio ("21642"). Si la llave usara el texto
+    // completo, la misma factura entraria dos veces al importar de ambas
+    // fuentes, asi que se toma la parte numerica, que es la que coincide.
+    const folio = params.numeroFactura.replace(/\D/g, '');
+    return `${nitNorm}_${folio || params.numeroFactura}`;
   }
 
   if (params.cufe) {

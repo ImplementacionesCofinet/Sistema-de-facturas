@@ -18,6 +18,7 @@ export interface Factura {
   n_factura: string | null;
   fra_abr: string | null;
   cufe: string | null;
+  divisa: string | null;
   fecha_emision: string | null;
   fecha_recepcion: string | null;
   nit: string | null;

@@ -12,7 +12,7 @@ import {
 } from './types';
 
 const COLUMNAS = `
-  id, id_unico, tipo_documento, n_factura, fra_abr, cufe,
+  id, id_unico, tipo_documento, n_factura, fra_abr, cufe, divisa,
   to_char(fecha_emision, 'YYYY-MM-DD') AS fecha_emision,
   fecha_recepcion, nit, tercero, total, area, estado, cbte, cbte_ok,
   cbte_ok_fecha, cbte_ok_usuario, observaciones, documento_ref,

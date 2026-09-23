@@ -1,5 +1,10 @@
-import ExcelJS from 'exceljs';
-import { mapearColumnas, puntajeEncabezado, type CampoCanonico } from './headers';
+import { matrizDesdeXlsx } from './xlsx';
+import {
+  esReporteDian,
+  mapearColumnas,
+  puntajeEncabezado,
+  type CampoCanonico,
+} from './headers';
 import * as N from './normalize';
 import type { EstadoFactura, TipoDocumento } from '@/lib/types';
 
@@ -11,6 +16,7 @@ export interface FilaImportada {
   n_factura: string | null;
   fra_abr: string | null;
   cufe: string | null;
+  divisa: string | null;
   fecha_emision: string | null;
   fecha_recepcion: string | null;
   nit: string | null;
@@ -37,23 +43,8 @@ export interface ResultadoParseo {
   errores: ErrorFila[];
   totalFilas: number;
   encabezadosReconocidos: CampoCanonico[];
-}
-
-/** exceljs devuelve objetos para formulas, hipervinculos y texto enriquecido. */
-export function valorCelda(valor: unknown): unknown {
-  if (valor === null || valor === undefined) return null;
-  if (valor instanceof Date) return valor;
-  if (typeof valor === 'object') {
-    const v = valor as Record<string, unknown>;
-    if ('text' in v) return v.text;
-    if ('result' in v) return v.result;
-    if ('richText' in v && Array.isArray(v.richText)) {
-      return (v.richText as { text?: string }[]).map((p) => p.text ?? '').join('');
-    }
-    if ('hyperlink' in v) return v.hyperlink;
-    if ('error' in v) return null;
-  }
-  return valor;
+  /** true cuando el archivo es el reporte de documentos recibidos de la DIAN. */
+  esDian: boolean;
 }
 
 const MAX_FILAS_BUSQUEDA_ENCABEZADO = 20;
@@ -91,10 +82,12 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
       ],
       totalFilas: 0,
       encabezadosReconocidos: [],
+      esDian: false,
     };
   }
 
   const columnas = mapearColumnas(matriz[indiceEncabezado]);
+  const esDian = esReporteDian(matriz[indiceEncabezado]);
   const filas: FilaImportada[] = [];
   const vistos = new Set<string>();
   let totalFilas = 0;
@@ -172,6 +165,7 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
       fila: numeroFilaExcel,
       id_unico: id,
       tipo_documento: N.tipoDocumento(crudo.tipo_documento, Boolean(nFactura)),
+      divisa: N.divisa(crudo.divisa),
       n_factura: nFactura,
       fra_abr: N.texto(crudo.fra_abr),
       cufe,
@@ -181,14 +175,17 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
       tercero,
       total,
       area: N.area(crudo.area),
-      estado: N.estado(crudo.estado),
+      // En el reporte de la DIAN, "Estado" es el acuse del documento
+      // electronico, no la decision del jefe de area: toda factura recien
+      // importada entra pendiente de aprobar.
+      estado: esDian ? 'PENDIENTE' : N.estado(crudo.estado),
       cbte: comprobante.cbte,
       // Una columna "OK" aparte tiene prioridad; si no existe, vale la marca
       // que venga escrita dentro del propio comprobante.
       cbte_ok: N.booleano(crudo.cbte_ok) || comprobante.ok,
       observaciones: N.texto(crudo.observaciones),
       documento_ref: N.texto(crudo.documento_ref),
-      forma_pago: N.texto(crudo.forma_pago),
+      forma_pago: esDian ? N.formaPagoDian(crudo.forma_pago) : N.texto(crudo.forma_pago),
       estado_pago: N.texto(crudo.estado_pago),
       mes_periodo: N.mesPeriodo(fechaClave),
     });
@@ -199,33 +196,8 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
     errores,
     totalFilas,
     encabezadosReconocidos: Array.from(new Set(columnas.values())),
+    esDian,
   };
-}
-
-/** Lee un .xlsx/.xlsm y devuelve la primera hoja como matriz de celdas. */
-export async function matrizDesdeExcel(buffer: Buffer): Promise<unknown[][]> {
-  const libro = new ExcelJS.Workbook();
-  // exceljs tipa load() con ArrayBuffer; un Buffer de Node funciona igual.
-  await libro.xlsx.load(buffer as unknown as ArrayBuffer);
-
-  const hoja = libro.worksheets[0];
-  if (!hoja) throw new Error('El archivo no contiene ninguna hoja de calculo.');
-
-  const matriz: unknown[][] = [];
-  hoja.eachRow({ includeEmpty: true }, (fila, numeroFila) => {
-    const celdas: unknown[] = [];
-    // fila.values es 1-based y trae un hueco en la posicion 0.
-    const valores = fila.values as unknown[];
-    for (let c = 1; c < valores.length; c++) {
-      celdas[c - 1] = valorCelda(valores[c]);
-    }
-    matriz[numeroFila - 1] = celdas;
-  });
-
-  for (let i = 0; i < matriz.length; i++) {
-    if (!matriz[i]) matriz[i] = [];
-  }
-  return matriz;
 }
 
 /** Lector de CSV con comillas, para archivos exportados como texto. */
@@ -286,8 +258,6 @@ export async function parsearArchivo(
   buffer: Buffer,
 ): Promise<ResultadoParseo> {
   const esCsv = /\.csv$/i.test(nombreArchivo);
-  const matriz = esCsv
-    ? matrizDesdeCsv(buffer.toString('utf8'))
-    : await matrizDesdeExcel(buffer);
+  const matriz = esCsv ? matrizDesdeCsv(buffer.toString('utf8')) : matrizDesdeXlsx(buffer);
   return normalizarMatriz(matriz);
 }

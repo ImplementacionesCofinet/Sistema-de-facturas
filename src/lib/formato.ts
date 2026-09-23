@@ -29,11 +29,25 @@ const FECHA_HORA = new Intl.DateTimeFormat('es-CO', {
   timeZone: 'America/Bogota',
 });
 
-export function moneda(valor: string | number | null | undefined): string {
+/**
+ * Importe con su moneda. Las facturas en divisa distinta al peso se marcan con
+ * su codigo, para que no se confunda un importe en dolares con uno en pesos.
+ */
+export function moneda(
+  valor: string | number | null | undefined,
+  divisa?: string | null,
+): string {
   if (valor === null || valor === undefined || valor === '') return '—';
   const n = typeof valor === 'number' ? valor : Number(valor);
   if (!Number.isFinite(n)) return '—';
-  return n % 1 === 0 ? MONEDA.format(n) : MONEDA_CON_DECIMALES.format(n);
+
+  const formateado = n % 1 === 0 ? MONEDA.format(n) : MONEDA_CON_DECIMALES.format(n);
+  if (!divisa || divisa.toUpperCase() === 'COP') return formateado;
+
+  // Se antepone el codigo en vez de cambiar el simbolo: asi se lee igual de
+  // rapido en la tabla y no hay duda de que no son pesos.
+  const sinSimbolo = formateado.replace(/^\s*\$\s*/, '');
+  return `${divisa.toUpperCase()} ${sinSimbolo}`;
 }
 
 /** Fecha simple. Las fechas 'YYYY-MM-DD' se muestran tal cual, sin desfase. */

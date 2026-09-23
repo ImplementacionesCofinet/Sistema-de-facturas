@@ -84,10 +84,11 @@ export default async function DetalleFactura({ params }: { params: Promise<{ id:
             <Dato etiqueta="NIT">{factura.nit ?? '—'}</Dato>
             <Dato etiqueta="Tercero">{factura.tercero ?? '—'}</Dato>
             <Dato etiqueta="Total">
-              <span className="font-semibold">{moneda(factura.total)}</span>
+              <span className="font-semibold">{moneda(factura.total, factura.divisa)}</span>
             </Dato>
             <Dato etiqueta="Fecha emision">{fecha(factura.fecha_emision)}</Dato>
             <Dato etiqueta="Fecha recepcion">{fechaHora(factura.fecha_recepcion)}</Dato>
+            <Dato etiqueta="Divisa">{factura.divisa ?? 'COP'}</Dato>
             <Dato etiqueta="Periodo">{periodo(factura.mes_periodo)}</Dato>
             <Dato etiqueta="Area">{factura.area ?? 'Sin asignar'}</Dato>
             <Dato etiqueta="Forma de pago">{factura.forma_pago ?? '—'}</Dato>
