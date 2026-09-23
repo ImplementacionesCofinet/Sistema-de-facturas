@@ -201,7 +201,7 @@ Cada carpeta tiene su propio `.env.produccion` y sus propios comandos; nada se p
 | `connect ECONNREFUSED ...:5432` | PostgreSQL no está corriendo, o `DATABASE_URL` tiene otro puerto o contraseña. |
 | `database "cofinet_facturas" does not exist` | Falta el paso 3 (`createdb`). |
 | `Falta DATABASE_URL` | Falta el paso 4, o está ejecutando desde otra carpeta. |
-| `relation "facturas" does not exist` | Falta el paso 5 (`npm run db:migrate`). |
+| `relation "facturas" does not exist` | La aplicación no pudo crear las tablas; revise en el registro las líneas `[migraciones]`. |
 | Entra al login pero dice «Correo o contraseña incorrectos» | Falta el paso 6, o la clave temporal ya se usó y se cambió. Vuelva a ejecutar `npm run clave <correo>`. |
 | Dice «Su cuenta no está registrada como aprobador» | El correo no quedó en `ADMIN_EMAILS` (paso 4) ni en la tabla `aprobadores`. |
 | `npm error Exit handler never called!` al construir la imagen | Docker se quedó sin memoria. Suba la RAM en **Docker Desktop → Settings → Resources** a 4 GB o más, cierre lo que no esté usando y repita. Ver abajo. |
@@ -375,7 +375,7 @@ npm run build       # compilación de producción
 npm start           # servidor de producción
 npm run typecheck   # TypeScript sin emitir
 npm test            # pruebas unitarias (Vitest)
-npm run db:migrate  # aplica las migraciones pendientes
+npm run db:migrate  # aplica las migraciones pendientes (la app también lo hace al arrancar)
 npm run db:seed     # carga áreas y aprobadores iniciales
 npm run db:respaldo # respaldo de la base con pg_dump
 npm run clave <correo> [clave]   # crea o restablece una contraseña local
@@ -421,8 +421,8 @@ alcanza la aplicación.
 cp .env.produccion.example .env.produccion    # complete los valores
 docker compose --env-file .env.produccion up -d --build
 
-# Crear las tablas la primera vez
-docker compose --env-file .env.produccion run --rm app node scripts/migrate.mjs
+# Cargar las areas y los aprobadores iniciales
+# (las tablas las crea la aplicacion sola al arrancar)
 docker compose --env-file .env.produccion run --rm app node scripts/seed.mjs
 
 # Crear la contraseña del primer administrador
@@ -435,6 +435,14 @@ docker compose --env-file .env.produccion run --rm app node scripts/clave.mjs ju
 El último comando imprime una clave temporal. Con ella se entra a
 `http://<servidor>:8080`, la app obliga a cambiarla, y desde **Aprobadores** se registran
 las demás personas y se les genera su propia clave temporal.
+
+Para actualizar a una versión nueva basta con traerla y reconstruir: **las migraciones
+pendientes se aplican solas al arrancar**, y quedan registradas en el log del contenedor.
+
+```bash
+git pull
+docker compose --env-file .env.produccion up -d --build
+```
 
 Comandos útiles:
 
@@ -450,7 +458,6 @@ docker compose --env-file .env.produccion up -d --build # actualizar a una versi
 ```bash
 npm ci
 npm run build          # genera .next/standalone: el servidor ya empaquetado
-npm run db:migrate
 npm run db:seed
 npm run clave juan.garcia@cofinet.com.au
 npm start

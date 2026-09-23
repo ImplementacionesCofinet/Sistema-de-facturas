@@ -26,7 +26,17 @@ function rutasCopiadas(): string[] {
 
 function estaEnLaImagen(rutaRelativa: string, copiadas: string[]): boolean {
   const normal = rutaRelativa.split(path.sep).join('/');
-  return copiadas.some((c) => normal === c || normal.startsWith(`${c}/`));
+
+  return copiadas.some((copiada) => {
+    if (copiada.includes('*')) {
+      // "src/lib/*.mjs" cubre los archivos de esa carpeta, no de sus subcarpetas.
+      const patron = new RegExp(
+        `^${copiada.split('*').map((p) => p.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*')}$`,
+      );
+      return patron.test(normal);
+    }
+    return normal === copiada || normal.startsWith(`${copiada}/`);
+  });
 }
 
 describe('contenido de la imagen de Docker', () => {

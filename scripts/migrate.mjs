@@ -1,12 +1,14 @@
-import { readdir, readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { Client } from 'pg';
 import { cargarEnv } from './env-file.mjs';
+import { aplicarMigraciones } from '../src/lib/migraciones.mjs';
 
 cargarEnv();
 
-const DIRECTORIO = path.resolve('db/migrations');
-
+/**
+ * Aplica las migraciones pendientes desde la linea de comandos.
+ * La aplicacion tambien las aplica sola al arrancar; este comando sirve para
+ * hacerlo aparte, por ejemplo antes de levantar el servicio.
+ */
 async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error('Falta DATABASE_URL (ver .env.example).');
@@ -22,41 +24,18 @@ async function main() {
   });
   await client.connect();
 
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS _migraciones (
-      nombre     TEXT PRIMARY KEY,
-      aplicada_en TIMESTAMPTZ NOT NULL DEFAULT now()
-    )
-  `);
+  const { aplicadas, yaEstaban } = await aplicarMigraciones(client, {
+    registrar: (mensaje) => console.log(mensaje),
+  });
 
-  const aplicadas = new Set(
-    (await client.query('SELECT nombre FROM _migraciones')).rows.map((f) => f.nombre),
-  );
-
-  const archivos = (await readdir(DIRECTORIO)).filter((f) => f.endsWith('.sql')).sort();
-
-  for (const archivo of archivos) {
-    if (aplicadas.has(archivo)) {
-      console.log(`= ${archivo} (ya aplicada)`);
-      continue;
-    }
-    const sql = await readFile(path.join(DIRECTORIO, archivo), 'utf8');
-    try {
-      await client.query('BEGIN');
-      await client.query(sql);
-      await client.query('INSERT INTO _migraciones (nombre) VALUES ($1)', [archivo]);
-      await client.query('COMMIT');
-      console.log(`+ ${archivo} aplicada`);
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw new Error(
-        `Error aplicando ${archivo}: ${error instanceof Error ? error.message : error}`,
-      );
-    }
-  }
-
+  for (const nombre of yaEstaban) console.log(`= ${nombre} (ya aplicada)`);
   await client.end();
-  console.log('Migraciones al dia.');
+
+  console.log(
+    aplicadas.length > 0
+      ? `Migraciones al dia: ${aplicadas.length} aplicada(s).`
+      : 'Migraciones al dia: no habia pendientes.',
+  );
 }
 
 main().catch((error) => {
