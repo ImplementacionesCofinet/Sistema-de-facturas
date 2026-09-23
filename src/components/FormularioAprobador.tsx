@@ -2,10 +2,10 @@
 
 import { useActionState } from 'react';
 import {
-  ESTADO_APROBADOR_INICIAL,
   accionCambiarEstadoAprobador,
   accionGuardarAprobador,
 } from '@/app/actions/aprobadores';
+import { ESTADO_APROBADOR_INICIAL } from '@/lib/acciones';
 
 export function FormularioAprobador({ areas }: { areas: string[] }) {
   const [estado, accion, enviando] = useActionState(

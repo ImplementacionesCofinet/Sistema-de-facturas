@@ -2,14 +2,13 @@
 
 import { useActionState } from 'react';
 import {
-  ESTADO_INICIAL,
   accionAdjuntar,
   accionAsignarArea,
   accionComprobante,
   accionDecidir,
   accionPago,
-  type EstadoAccion,
 } from '@/app/actions/facturas';
+import { ESTADO_INICIAL, type EstadoAccion } from '@/lib/acciones';
 import type { Factura } from '@/lib/types';
 
 function Aviso({ estado }: { estado: EstadoAccion }) {

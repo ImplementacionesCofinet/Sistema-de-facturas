@@ -4,15 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireContabilidad } from '@/lib/auth';
 import { parsearArchivo } from '@/lib/import/parse';
 import { importarFilas, type ModoImportacion } from '@/lib/importacion';
-import type { ResultadoImportacion } from '@/lib/importacion';
-
-export interface EstadoImportacion {
-  ok: boolean;
-  mensaje: string;
-  resultado?: ResultadoImportacion;
-}
-
-export const ESTADO_IMPORTACION_INICIAL: EstadoImportacion = { ok: false, mensaje: '' };
+import type { EstadoImportacion } from '@/lib/acciones';
 
 const TAMANO_MAXIMO = 25 * 1024 * 1024; // 25 MB
 

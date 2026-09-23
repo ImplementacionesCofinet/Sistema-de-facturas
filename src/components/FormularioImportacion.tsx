@@ -1,7 +1,8 @@
 'use client';
 
 import { useActionState } from 'react';
-import { ESTADO_IMPORTACION_INICIAL, accionImportar } from '@/app/actions/importar';
+import { accionImportar } from '@/app/actions/importar';
+import { ESTADO_IMPORTACION_INICIAL } from '@/lib/acciones';
 
 export function FormularioImportacion() {
   const [estado, accion, enviando] = useActionState(accionImportar, ESTADO_IMPORTACION_INICIAL);

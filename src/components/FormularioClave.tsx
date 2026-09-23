@@ -1,11 +1,8 @@
 'use client';
 
 import { useActionState } from 'react';
-import {
-  ESTADO_CLAVE_INICIAL,
-  accionCambiarClave,
-  accionGenerarClaveTemporal,
-} from '@/app/actions/clave';
+import { accionCambiarClave, accionGenerarClaveTemporal } from '@/app/actions/clave';
+import { ESTADO_CLAVE_INICIAL } from '@/lib/acciones';
 
 export function FormularioCambiarClave({ obligatorio }: { obligatorio: boolean }) {
   const [estado, accion, enviando] = useActionState(accionCambiarClave, ESTADO_CLAVE_INICIAL);

@@ -5,15 +5,7 @@ import { requireAdmin, requireUser } from '@/lib/auth';
 import { cambiarClavePropia, establecerClave } from '@/lib/credenciales';
 import { generarClaveTemporal } from '@/lib/password.mjs';
 import { crearSesion } from '@/lib/session';
-
-export interface EstadoClave {
-  ok: boolean;
-  mensaje: string;
-  /** Clave temporal generada, para que el administrador se la entregue. */
-  claveTemporal?: string;
-}
-
-export const ESTADO_CLAVE_INICIAL: EstadoClave = { ok: false, mensaje: '' };
+import type { EstadoClave } from '@/lib/acciones';
 
 /** La persona cambia su propia contrasena. */
 export async function accionCambiarClave(

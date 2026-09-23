@@ -11,13 +11,7 @@ import {
 } from '@/lib/facturas';
 import { guardarAdjunto, validarAdjunto } from '@/lib/storage';
 import { puedeVerArea, type EstadoFactura } from '@/lib/types';
-
-export interface EstadoAccion {
-  ok: boolean;
-  mensaje: string;
-}
-
-export const ESTADO_INICIAL: EstadoAccion = { ok: false, mensaje: '' };
+import type { EstadoAccion } from '@/lib/acciones';
 
 function fallo(error: unknown): EstadoAccion {
   if (error instanceof ErrorNegocio) return { ok: false, mensaje: error.message };

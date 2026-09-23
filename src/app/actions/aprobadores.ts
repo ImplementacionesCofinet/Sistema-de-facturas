@@ -4,13 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
 import { query } from '@/lib/db';
 import type { Rol } from '@/lib/types';
-
-export interface EstadoAprobador {
-  ok: boolean;
-  mensaje: string;
-}
-
-export const ESTADO_APROBADOR_INICIAL: EstadoAprobador = { ok: false, mensaje: '' };
+import type { EstadoAprobador } from '@/lib/acciones';
 
 const ROLES: Rol[] = ['APROBADOR', 'CONTABILIDAD', 'ADMIN'];
 
