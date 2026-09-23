@@ -4,6 +4,15 @@ const MONEDA = new Intl.NumberFormat('es-CO', {
   maximumFractionDigits: 0,
 });
 
+// Algunas facturas llegan con centavos (servicios portuarios, fletes). Si se
+// redondearan, 6131,07 se mostraria como 6.131 y el importe dejaria de cuadrar.
+const MONEDA_CON_DECIMALES = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 const FECHA = new Intl.DateTimeFormat('es-CO', {
   day: '2-digit',
   month: '2-digit',
@@ -23,7 +32,8 @@ const FECHA_HORA = new Intl.DateTimeFormat('es-CO', {
 export function moneda(valor: string | number | null | undefined): string {
   if (valor === null || valor === undefined || valor === '') return '—';
   const n = typeof valor === 'number' ? valor : Number(valor);
-  return Number.isFinite(n) ? MONEDA.format(n) : '—';
+  if (!Number.isFinite(n)) return '—';
+  return n % 1 === 0 ? MONEDA.format(n) : MONEDA_CON_DECIMALES.format(n);
 }
 
 /** Fecha simple. Las fechas 'YYYY-MM-DD' se muestran tal cual, sin desfase. */

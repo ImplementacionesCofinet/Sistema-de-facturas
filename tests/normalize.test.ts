@@ -138,6 +138,44 @@ describe('estado y booleano', () => {
   });
 });
 
+describe('comprobante', () => {
+  // En el Excel de Cofinet la marca de contabilizado va dentro de la celda
+  // del comprobante, con varias formas de escribirla.
+  it('separa el numero de comprobante de la marca OK', () => {
+    expect(N.comprobante('CP5785 - OK')).toEqual({ cbte: 'CP5785', ok: true });
+    expect(N.comprobante('CP-6241 OK')).toEqual({ cbte: 'CP-6241', ok: true });
+    expect(N.comprobante('FP-256 - OK')).toEqual({ cbte: 'FP-256', ok: true });
+    expect(N.comprobante('NB467 - OK')).toEqual({ cbte: 'NB467', ok: true });
+  });
+
+  it('conserva los comprobantes compuestos', () => {
+    expect(N.comprobante('CP6115 / FP258 - OK')).toEqual({
+      cbte: 'CP6115 / FP258',
+      ok: true,
+    });
+  });
+
+  it('no confunde otras anotaciones con un OK', () => {
+    expect(N.comprobante('CP6212 - PDTE. APROBACION')).toEqual({
+      cbte: 'CP6212 - PDTE. APROBACION',
+      ok: false,
+    });
+  });
+
+  it('deja el comprobante intacto cuando no hay marca', () => {
+    expect(N.comprobante('CP6071')).toEqual({ cbte: 'CP6071', ok: false });
+  });
+
+  it('acepta una celda que solo dice OK', () => {
+    expect(N.comprobante('OK')).toEqual({ cbte: null, ok: true });
+  });
+
+  it('trata la celda vacia como sin comprobante', () => {
+    expect(N.comprobante('')).toEqual({ cbte: null, ok: false });
+    expect(N.comprobante(null)).toEqual({ cbte: null, ok: false });
+  });
+});
+
 describe('tipoDocumento', () => {
   it('detecta la cuenta de cobro por la columna tipo', () => {
     expect(N.tipoDocumento('Cuenta de cobro', false)).toBe('CUENTA_COBRO');

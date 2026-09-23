@@ -179,6 +179,26 @@ export function estado(valor: unknown): EstadoFactura {
   return 'PENDIENTE';
 }
 
+/**
+ * En el Excel de Cofinet la marca de contabilizado va escrita dentro de la
+ * misma celda del comprobante: "CP5785 - OK", "CP-6241 OK", "FP-256 - OK".
+ * Se separa en sus dos partes para que la app pueda filtrar por contabilizado.
+ *
+ * Otras anotaciones se respetan tal cual: "CP6212 - PDTE. APROBACION" no es
+ * un OK y su texto se conserva completo.
+ */
+export function comprobante(valor: unknown): { cbte: string | null; ok: boolean } {
+  const s = texto(valor);
+  if (!s) return { cbte: null, ok: false };
+
+  if (/^OK\.?$/i.test(s)) return { cbte: null, ok: true };
+
+  const m = s.match(/^(.*?)[\s\-\u2013/.]+OK\.?$/i);
+  if (m && m[1].trim() !== '') return { cbte: m[1].trim(), ok: true };
+
+  return { cbte: s, ok: false };
+}
+
 export function booleano(valor: unknown): boolean {
   if (typeof valor === 'boolean') return valor;
   const s = (texto(valor) ?? '').toUpperCase();

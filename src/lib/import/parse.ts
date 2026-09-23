@@ -118,23 +118,41 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
     const nFactura = N.numeroFactura(crudo.n_factura, crudo.prefijo, crudo.folio);
     const nitNorm = N.nit(crudo.nit);
     const fechaEmision = N.fecha(crudo.fecha_emision);
+    const fechaRecepcion = N.fechaHora(crudo.fecha_recepcion);
     const total = N.numero(crudo.total);
     const cufe = N.texto(crudo.cufe);
+    const tercero = N.texto(crudo.tercero);
+
+    // Muchas cuentas de cobro llegan sin fecha de emision, solo con la de
+    // recepcion. Sirve igual para identificarlas y para ubicarlas en su mes.
+    const fechaClave = fechaEmision ?? fechaRecepcion?.slice(0, 10) ?? null;
+
+    // El comprobante puede traer la marca de contabilizado dentro del texto.
+    const comprobante = N.comprobante(crudo.cbte);
 
     const id = N.idUnico({
       nit: nitNorm,
       numeroFactura: nFactura,
-      fechaEmision,
+      fechaEmision: fechaClave,
       total,
       cufe,
     });
 
+    const referencia = tercero ? ` (${tercero})` : '';
+
     if (!id) {
+      const falta = [
+        !nitNorm && 'NIT',
+        !fechaClave && 'fecha',
+        total === null && 'total',
+      ].filter(Boolean);
+
       errores.push({
         fila: numeroFilaExcel,
         motivo:
-          'No se pudo construir el identificador unico: se requiere numero de factura, ' +
-          'o CUFE, o bien NIT + fecha de emision + total.',
+          `No se pudo identificar el documento${referencia}: sin numero de factura ni CUFE, ` +
+          `hacen falta ${falta.join(' y ')} para distinguirlo de otros. ` +
+          'Complete ese dato en el archivo y vuelva a importar.',
       });
       continue;
     }
@@ -142,7 +160,9 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
     if (vistos.has(id)) {
       errores.push({
         fila: numeroFilaExcel,
-        motivo: `Fila duplicada dentro del mismo archivo (${id}). Se conservo la primera.`,
+        motivo:
+          `Documento repetido dentro del archivo${referencia}: coincide en NIT, fecha y total ` +
+          'con una fila anterior. Se conservo la primera.',
       });
       continue;
     }
@@ -156,19 +176,21 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
       fra_abr: N.texto(crudo.fra_abr),
       cufe,
       fecha_emision: fechaEmision,
-      fecha_recepcion: N.fechaHora(crudo.fecha_recepcion),
+      fecha_recepcion: fechaRecepcion,
       nit: nitNorm,
-      tercero: N.texto(crudo.tercero),
+      tercero,
       total,
       area: N.area(crudo.area),
       estado: N.estado(crudo.estado),
-      cbte: N.texto(crudo.cbte),
-      cbte_ok: N.booleano(crudo.cbte_ok),
+      cbte: comprobante.cbte,
+      // Una columna "OK" aparte tiene prioridad; si no existe, vale la marca
+      // que venga escrita dentro del propio comprobante.
+      cbte_ok: N.booleano(crudo.cbte_ok) || comprobante.ok,
       observaciones: N.texto(crudo.observaciones),
       documento_ref: N.texto(crudo.documento_ref),
       forma_pago: N.texto(crudo.forma_pago),
       estado_pago: N.texto(crudo.estado_pago),
-      mes_periodo: N.mesPeriodo(fechaEmision),
+      mes_periodo: N.mesPeriodo(fechaClave),
     });
   }
 

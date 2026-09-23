@@ -65,8 +65,9 @@ const ALIAS: Record<CampoCanonico, string[]> = {
     'identificacion emisor', 'documento emisor', 'identificacion',
   ],
   tercero: [
-    'tercero', 'nombre emisor', 'nombre del emisor', 'emisor', 'proveedor',
-    'nombre proveedor', 'nombre tercero', 'razon social', 'beneficiario',
+    'tercero', 'terceros', 'nombre emisor', 'nombre del emisor', 'emisor',
+    'proveedor', 'proveedores', 'nombre proveedor', 'nombre tercero',
+    'nombre terceros', 'razon social', 'beneficiario',
   ],
   total: ['total', 'valor total', 'total factura', 'gran total', 'monto total', 'valor'],
   area: ['area', 'area responsable', 'departamento', 'centro de costo', 'centro costo'],

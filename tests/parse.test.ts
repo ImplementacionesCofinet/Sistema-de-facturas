@@ -21,6 +21,12 @@ describe('encabezados', () => {
     expect(campoDeEncabezado('Área')).toBe('area');
   });
 
+  it('reconoce el encabezado en plural que usa Cofinet', () => {
+    // La columna del proveedor se titula "TERCEROS", no "Tercero".
+    expect(campoDeEncabezado('TERCEROS')).toBe('tercero');
+    expect(campoDeEncabezado('Proveedores')).toBe('tercero');
+  });
+
   it('asigna cada campo a una sola columna', () => {
     const mapa = mapearColumnas(['Total', 'Total', 'NIT']);
     expect(mapa.get(0)).toBe('total');
@@ -75,7 +81,7 @@ describe('normalizarMatriz', () => {
       ['1', 'FE', '01/06/2026', '', '800100200', 'PROVEEDOR UNO', '100000', 'Factura'],
     ]);
     expect(resultado.filas).toHaveLength(1);
-    expect(resultado.errores[0].motivo).toMatch(/duplicada/i);
+    expect(resultado.errores[0].motivo).toMatch(/repetido/i);
   });
 
   it('reporta las filas sin identificador construible', () => {
@@ -84,7 +90,7 @@ describe('normalizarMatriz', () => {
       ['', '', '', '', '', 'SIN DATOS', '', ''],
     ]);
     expect(resultado.filas).toHaveLength(0);
-    expect(resultado.errores[0].motivo).toMatch(/identificador unico/i);
+    expect(resultado.errores[0].motivo).toMatch(/no se pudo identificar/i);
   });
 
   it('genera el id de cuenta de cobro cuando no hay numero de factura', () => {
@@ -113,6 +119,91 @@ describe('normalizarMatriz', () => {
     expect(fila.cbte).toBe('CB-991');
     expect(fila.cbte_ok).toBe(true);
     expect(fila.observaciones).toBe('Revisado');
+  });
+});
+
+describe('estructura real del Excel de Cofinet', () => {
+  // Encabezados exactos del archivo mensual que maneja Contabilidad.
+  const encabezados = [
+    'Folio', 'Fra Abr', 'Fecha Emision', 'Fecha Recepción', 'Nit', 'TERCEROS',
+    'Total', 'Area', 'Nombre aprobador', 'Estado', 'Cbte', 'OBSERVACIONES',
+    'FORMA DE PAGO', 'ESTADO DEL PAGO',
+  ];
+
+  it('importa una factura con todos sus datos de gestion', () => {
+    const r = normalizarMatriz([
+      encabezados,
+      ['1547781', 'IBE', '2026-08-01', '2026-08-01', '860502609',
+       'DHL EXPRESS COLOMBIA LTDA', '5146582', 'COMERCIO EXTERIOR', '',
+       'APROBADA', 'CP5785 - OK', 'MUESTRAS PARA UCRANIA', 'TRANSFERENCIA', 'PAGADO'],
+    ]);
+
+    expect(r.errores).toHaveLength(0);
+    const f = r.filas[0];
+    expect(f.tercero).toBe('DHL EXPRESS COLOMBIA LTDA');
+    expect(f.nit).toBe('860502609');
+    expect(f.total).toBe(5146582);
+    expect(f.area).toBe('COMERCIO EXTERIOR');
+    expect(f.estado).toBe('APROBADA');
+    // La marca de contabilizado venia escrita dentro del comprobante.
+    expect(f.cbte).toBe('CP5785');
+    expect(f.cbte_ok).toBe(true);
+    expect(f.mes_periodo).toBe('2026-08');
+  });
+
+  it('acepta "APROBADO" en masculino y el estado con espacios sobrantes', () => {
+    const r = normalizarMatriz([
+      encabezados,
+      ['100', '', '2026-08-05', '', '900111222', 'PROVEEDOR', '1000', 'SISTEMAS',
+       '', 'APROBADO  ', 'CP1 - OK', '', '', ''],
+    ]);
+    expect(r.filas[0].estado).toBe('APROBADA');
+  });
+
+  it('identifica una cuenta de cobro que solo trae fecha de recepcion', () => {
+    // Varias cuentas de cobro llegan sin fecha de emision.
+    const r = normalizarMatriz([
+      encabezados,
+      ['', '', '', '2026-08-31', '1005091967', 'CUENTA DE COBRO JOSE ALEJANDRO',
+       '1400000', 'COMERCIO EXTERIOR', '', 'APROBADA', 'CP6077 - OK', '', '', ''],
+    ]);
+
+    expect(r.errores).toHaveLength(0);
+    expect(r.filas[0].id_unico).toBe('CC_1005091967_2026-08-31_1400000.00');
+    expect(r.filas[0].tipo_documento).toBe('CUENTA_COBRO');
+    expect(r.filas[0].mes_periodo).toBe('2026-08');
+  });
+
+  it('explica que dato falta cuando no puede identificar el documento', () => {
+    const r = normalizarMatriz([
+      encabezados,
+      ['', '', '', '', '1018512811', 'CUENTA DE COBRO DAVID SERNA', '20481039',
+       'COMPRA CAFE (BENEFICIO)', '', 'APROBADA', 'CF-775 - OK', '', '', ''],
+    ]);
+
+    expect(r.filas).toHaveLength(0);
+    expect(r.errores[0].motivo).toContain('DAVID SERNA');
+    expect(r.errores[0].motivo).toContain('fecha');
+  });
+
+  it('nombra al tercero cuando descarta una cuenta de cobro repetida', () => {
+    const cuenta = ['', '', '2026-08-28', '', '1115189620', 'CUENTA DE COBRO CESAR',
+                    '28533532.01', 'COMPRA CAFE (PRODUCCION)', '', 'PENDIENTE',
+                    'CF760 - OK', '', '', ''];
+    const r = normalizarMatriz([encabezados, cuenta, [...cuenta]]);
+
+    expect(r.filas).toHaveLength(1);
+    expect(r.errores[0].motivo).toContain('CUENTA DE COBRO CESAR');
+    expect(r.errores[0].motivo).toContain('repetido');
+  });
+
+  it('conserva los centavos de los importes en divisa', () => {
+    const r = normalizarMatriz([
+      encabezados,
+      ['3329130', 'OE', '2026-08-01', '', '835000149', 'PUERTO AGUADULCE',
+       '6131.07', 'COMERCIO EXTERIOR', '', 'APROBADA', 'CP5639 - OK', '', '', ''],
+    ]);
+    expect(r.filas[0].total).toBe(6131.07);
   });
 });
 
