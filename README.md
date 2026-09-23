@@ -50,7 +50,6 @@ psql --version      # debe decir 14 o superior
 # 1. Traer el código
 git clone https://github.com/ImplementacionesCofinet/Sistema-de-facturas.git
 cd Sistema-de-facturas
-git checkout claude/cofinet-invoice-approval-app-xrvczf
 
 # 2. Instalar las librerías
 npm install
@@ -375,6 +374,7 @@ npm run build       # compilación de producción
 npm start           # servidor de producción
 npm run typecheck   # TypeScript sin emitir
 npm test            # pruebas unitarias (Vitest)
+npm run validar     # pruebas, tipos y compilación de producción
 npm run db:migrate  # aplica las migraciones pendientes (la app también lo hace al arrancar)
 npm run db:seed     # carga áreas y aprobadores iniciales
 npm run db:respaldo # respaldo de la base con pg_dump
