@@ -17,4 +17,8 @@ next-env.d.ts
 /storage/
 /respaldos/*
 !/respaldos/.gitkeep
+
+# Certificado de la CA corporativa: es propio de cada instalacion.
+certs/*.crt
+certs/*.pem
 tsconfig.tsbuildinfo

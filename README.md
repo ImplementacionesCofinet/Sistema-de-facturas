@@ -98,6 +98,32 @@ docker compose --env-file .env.produccion run --rm app node scripts/clave.mjs ju
 Aquí la dirección es **http://localhost:8080** (no 3000), porque el contenedor publica ese
 puerto.
 
+### `SELF_SIGNED_CERT_IN_CHAIN` al construir la imagen
+
+Es el caso más frecuente en una red corporativa. El cortafuegos de la empresa inspecciona
+el tráfico HTTPS y lo vuelve a firmar con su propia CA. Windows confía en esa CA porque
+está instalada en su almacén de certificados, pero **el contenedor no la conoce**, así que
+rechaza la conexión y `npm` falla.
+
+Se reconoce porque Docker sí descarga sus imágenes (usa la red de Windows) mientras que
+`npm` dentro del contenedor no llega a ninguna parte. Para confirmarlo:
+
+```bash
+docker run --rm node:22-alpine npm ping
+```
+
+Si responde `SELF_SIGNED_CERT_IN_CHAIN`, exporte los certificados en los que ya confía
+Windows y vuelva a construir:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\exportar-ca-windows.ps1
+docker compose --env-file .env.produccion up -d --build
+```
+
+El script escribe `certs/ca-corporativa.crt`, que la construcción detecta sola. Ese archivo
+no se sube al repositorio: cada empresa tiene el suyo, y donde no hay inspección de tráfico
+no hace falta ninguno. Detalles en [`certs/LEEME.md`](certs/LEEME.md).
+
 ### Si la construcción va lentísima o npm falla
 
 `npm ci` dentro de la imagen debería tardar entre uno y tres minutos. Si tarda diez o

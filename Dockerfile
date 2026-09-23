@@ -20,9 +20,18 @@ ENV NPM_CONFIG_AUDIT=false \
 
 COPY package.json package-lock.json ./
 
+# Certificado de la CA de la empresa, si la red inspecciona el trafico HTTPS.
+# Sin el, npm falla aqui con SELF_SIGNED_CERT_IN_CHAIN: Windows confia en esa
+# CA pero el contenedor no la conoce. Ver certs/LEEME.md.
+COPY certs/ /certs/
+
 # La cache de npm se conserva entre construcciones: si una falla a medio camino,
 # la siguiente reaprovecha lo ya descargado en vez de empezar de cero.
 RUN --mount=type=cache,target=/root/.npm \
+    if [ -s /certs/ca-corporativa.crt ]; then \
+      echo "Usando la CA corporativa de certs/ca-corporativa.crt"; \
+      export NODE_EXTRA_CA_CERTS=/certs/ca-corporativa.crt; \
+    fi; \
     npm ci --no-audit --no-fund
 
 # --- 2. Compilacion ----------------------------------------------------------
