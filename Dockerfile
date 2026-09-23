@@ -45,7 +45,9 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
     DATABASE_URL=postgresql://build:build@localhost:5432/build \
     SESSION_SECRET=build-time-placeholder-no-se-usa-en-ejecucion \
     NODE_OPTIONS=--max-old-space-size=3072
-RUN npm run build
+
+# public/ puede venir vacia de un clon; el COPY de la etapa final la exige.
+RUN mkdir -p public && npm run build
 
 # --- 3. Ejecucion ------------------------------------------------------------
 FROM node:22-alpine AS runner
