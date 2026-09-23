@@ -7,23 +7,23 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-# npm falla con "Exit handler never called!" cuando se queda sin memoria o se
-# le corta una descarga. Estos ajustes bajan la concurrencia, reintentan lo que
-# falle y quitan trabajo que no aporta nada dentro de una imagen.
+# Reintentos y esperas amplias para redes lentas o con proxy corporativo.
+# La concurrencia se deja en el valor por defecto: bajarla no ahorra memoria de
+# forma apreciable y multiplica el tiempo cuando la red es el cuello de botella.
 ENV NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
     NPM_CONFIG_UPDATE_NOTIFIER=false \
-    NPM_CONFIG_MAXSOCKETS=4 \
     NPM_CONFIG_FETCH_RETRIES=5 \
-    NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
-    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000 \
+    NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=10000 \
+    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=60000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
 COPY package.json package-lock.json ./
 
-# Un segundo intento aprovecha lo que quedo en la cache y suele pasar cuando el
-# primero murio a medio camino.
-RUN npm ci --no-audit --no-fund || npm ci --no-audit --no-fund
+# La cache de npm se conserva entre construcciones: si una falla a medio camino,
+# la siguiente reaprovecha lo ya descargado en vez de empezar de cero.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund
 
 # --- 2. Compilacion ----------------------------------------------------------
 FROM node:22-alpine AS builder

@@ -98,6 +98,34 @@ docker compose --env-file .env.produccion run --rm app node scripts/clave.mjs ju
 Aquí la dirección es **http://localhost:8080** (no 3000), porque el contenedor publica ese
 puerto.
 
+### Si la construcción va lentísima o npm falla
+
+`npm ci` dentro de la imagen debería tardar entre uno y tres minutos. Si tarda diez o
+veinte, o muere con `Exit handler never called!`, casi siempre es la **red del contenedor**,
+no el código ni la memoria: los contenedores de Docker **no heredan la configuración de
+proxy de Windows**, así que en una red corporativa quedan sin salida o con salida
+degradada, mientras el navegador y el `npm` de Windows funcionan con normalidad.
+
+Mida primero cuánto tarda un contenedor en alcanzar el registro de npm:
+
+```bash
+docker run --rm node:22-alpine npm ping
+```
+
+- Responde en pocos segundos → la red está bien; el problema es otro.
+- Tarda mucho o falla → es la red del contenedor. Configure el proxy de la empresa en
+  **Docker Desktop → Settings → Resources → Proxies**, active *Manual proxy configuration*
+  y ponga la misma dirección que usa Windows. Luego *Apply & Restart*.
+
+La dirección del proxy de Windows se consulta con:
+
+```powershell
+netsh winhttp show proxy
+```
+
+La construcción guarda la caché de npm entre intentos, así que aunque falle a medio camino
+el siguiente intento reaprovecha lo ya descargado y avanza más.
+
 ### Memoria para construir la imagen
 
 Compilar la aplicación (instalar dependencias y generar el build de Next) necesita
