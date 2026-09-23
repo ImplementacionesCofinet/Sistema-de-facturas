@@ -6,8 +6,24 @@
 # --- 1. Dependencias ---------------------------------------------------------
 FROM node:22-alpine AS deps
 WORKDIR /app
+
+# npm falla con "Exit handler never called!" cuando se queda sin memoria o se
+# le corta una descarga. Estos ajustes bajan la concurrencia, reintentan lo que
+# falle y quitan trabajo que no aporta nada dentro de una imagen.
+ENV NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_UPDATE_NOTIFIER=false \
+    NPM_CONFIG_MAXSOCKETS=4 \
+    NPM_CONFIG_FETCH_RETRIES=5 \
+    NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
+    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000 \
+    NPM_CONFIG_FETCH_TIMEOUT=600000
+
 COPY package.json package-lock.json ./
-RUN npm ci
+
+# Un segundo intento aprovecha lo que quedo en la cache y suele pasar cuando el
+# primero murio a medio camino.
+RUN npm ci --no-audit --no-fund || npm ci --no-audit --no-fund
 
 # --- 2. Compilacion ----------------------------------------------------------
 FROM node:22-alpine AS builder
@@ -18,7 +34,8 @@ COPY . .
 # configuracion. Los reales se leen del entorno al arrancar el contenedor.
 ENV NEXT_TELEMETRY_DISABLED=1 \
     DATABASE_URL=postgresql://build:build@localhost:5432/build \
-    SESSION_SECRET=build-time-placeholder-no-se-usa-en-ejecucion
+    SESSION_SECRET=build-time-placeholder-no-se-usa-en-ejecucion \
+    NODE_OPTIONS=--max-old-space-size=3072
 RUN npm run build
 
 # --- 3. Ejecucion ------------------------------------------------------------

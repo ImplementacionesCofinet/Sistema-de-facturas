@@ -98,6 +98,22 @@ docker compose --env-file .env.produccion run --rm app node scripts/clave.mjs ju
 Aquí la dirección es **http://localhost:8080** (no 3000), porque el contenedor publica ese
 puerto.
 
+### Memoria para construir la imagen
+
+Compilar la aplicación (instalar dependencias y generar el build de Next) necesita
+**al menos 4 GB de RAM** disponibles para Docker. Con menos, `npm` suele morir a mitad
+con el mensaje `Exit handler never called!`, que no dice nada útil sobre la causa real.
+
+En **Docker Desktop → Settings → Resources → Memory** suba el límite y aplique los cambios.
+Si ya hay otros proyectos corriendo, deténgalos mientras se construye:
+
+```bash
+docker compose -p mesadeayuda stop      # o el nombre que tenga ese proyecto
+```
+
+Una vez construida la imagen, la app en marcha consume bastante menos; puede volver a
+levantar los demás proyectos.
+
 ### Si ya tiene otros proyectos en Docker Desktop
 
 Los dos pueden convivir sin tocarse. Este proyecto usa nombres propios para todo
@@ -134,6 +150,7 @@ Cada carpeta tiene su propio `.env.produccion` y sus propios comandos; nada se p
 | `relation "facturas" does not exist` | Falta el paso 5 (`npm run db:migrate`). |
 | Entra al login pero dice «Correo o contraseña incorrectos» | Falta el paso 6, o la clave temporal ya se usó y se cambió. Vuelva a ejecutar `npm run clave <correo>`. |
 | Dice «Su cuenta no está registrada como aprobador» | El correo no quedó en `ADMIN_EMAILS` (paso 4) ni en la tabla `aprobadores`. |
+| `npm error Exit handler never called!` al construir la imagen | Docker se quedó sin memoria. Suba la RAM en **Docker Desktop → Settings → Resources** a 4 GB o más, cierre lo que no esté usando y repita. Ver abajo. |
 | `Port 3000 is already in use` | Otra cosa ocupa el puerto: `npm run dev -- -p 3001` y abra `localhost:3001`. |
 
 ### Para que lo vean otros equipos de la red
