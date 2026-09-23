@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { areasDisponibles, historialFactura, obtenerFactura } from '@/lib/facturas';
-import { fecha, fechaHora, moneda, periodo } from '@/lib/formato';
+import { fecha, fechaHora, moneda, nombreDocumento, periodo } from '@/lib/formato';
 import { esContabilidad, puedeVerArea } from '@/lib/types';
 import { ContabilizadoChip, EstadoChip } from '@/components/EstadoChip';
 import {
@@ -62,7 +62,7 @@ export default async function DetalleFactura({ params }: { params: Promise<{ id:
             ← Volver a facturas
           </Link>
           <h1 className="mt-1 text-xl font-bold text-marca-900">
-            {factura.n_factura ?? factura.fra_abr ?? factura.id_unico}
+            {nombreDocumento(factura)}
           </h1>
           <p className="text-sm text-pizarra-500">{factura.tercero ?? 'Tercero sin nombre'}</p>
         </div>
@@ -172,9 +172,7 @@ export default async function DetalleFactura({ params }: { params: Promise<{ id:
               </section>
 
               <section className="tarjeta p-5">
-                <h2 className="titulo-seccion mb-4">
-                  Area responsable
-                </h2>
+                <h2 className="titulo-seccion mb-4">Area responsable</h2>
                 <FormularioArea factura={factura} areas={areas} />
               </section>
 

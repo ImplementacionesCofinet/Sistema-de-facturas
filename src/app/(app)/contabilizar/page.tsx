@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireContabilidad } from '@/lib/auth';
 import { listarFacturas } from '@/lib/facturas';
-import { fecha, fechaHora, moneda } from '@/lib/formato';
+import { fecha, fechaHora, moneda, nombreDocumento } from '@/lib/formato';
 import { FormularioComprobante } from '@/components/FormulariosFactura';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +52,7 @@ export default async function PaginaContabilizar() {
                 <tr key={f.id} className="align-top hover:bg-pizarra-50">
                   <td className="px-3 py-3 font-medium">
                     <Link href={`/facturas/${f.id}`} className="text-marca-700 hover:underline">
-                      {f.n_factura ?? f.fra_abr ?? f.id_unico}
+                      {nombreDocumento(f)}
                     </Link>
                   </td>
                   <td className="max-w-[220px] truncate px-3 py-3" title={f.tercero ?? ''}>
@@ -66,8 +66,16 @@ export default async function PaginaContabilizar() {
                   </td>
                   <td className="px-3 py-3 text-pizarra-500">{f.area ?? '—'}</td>
                   <td className="px-3 py-3 text-xs text-pizarra-500">
-                    {f.aprobado_por ?? '—'}
-                    <span className="block text-pizarra-400">{fechaHora(f.fecha_aprobacion)}</span>
+                    {f.aprobado_por ? (
+                      <>
+                        {f.aprobado_por}
+                        <span className="block text-pizarra-400">
+                          {fechaHora(f.fecha_aprobacion)}
+                        </span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
                   </td>
                   <td className="px-3 py-3">
                     <FormularioComprobante factura={f} compacto />

@@ -201,7 +201,7 @@ export function FormularioArea({ factura, areas }: { factura: Factura; areas: st
       <input type="hidden" name="id" value={factura.id} />
       <div className="min-w-[180px] flex-1">
         <label className="etiqueta" htmlFor={`area-${factura.id}`}>
-          Area responsable
+          Asignar a
         </label>
         <select
           id={`area-${factura.id}`}

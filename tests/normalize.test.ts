@@ -237,3 +237,29 @@ describe('mesPeriodo', () => {
     expect(N.mesPeriodo(null)).toBeNull();
   });
 });
+
+describe('nombreDocumento', () => {
+  const base = { n_factura: null, fra_abr: null, tipo_documento: 'FACTURA' };
+
+  it('usa el numero de factura cuando lo hay', async () => {
+    const { nombreDocumento } = await import('@/lib/formato');
+    expect(nombreDocumento({ ...base, n_factura: 'FVE21642' })).toBe('FVE21642');
+  });
+
+  it('cae en la abreviatura si no hay numero', async () => {
+    const { nombreDocumento } = await import('@/lib/formato');
+    expect(nombreDocumento({ ...base, fra_abr: 'CHF' })).toBe('CHF');
+  });
+
+  it('nombra las cuentas de cobro por su tipo, no por el id interno', async () => {
+    // Antes se mostraba "CC_7543484_2026-09-23_2108700.00" en la tabla.
+    const { nombreDocumento } = await import('@/lib/formato');
+    expect(nombreDocumento({ ...base, tipo_documento: 'CUENTA_COBRO' })).toBe('Cuenta de cobro');
+    expect(nombreDocumento({ ...base, tipo_documento: 'NOTA_CREDITO' })).toBe('Nota crédito');
+  });
+
+  it('nunca queda vacio', async () => {
+    const { nombreDocumento } = await import('@/lib/formato');
+    expect(nombreDocumento({ ...base, tipo_documento: 'FACTURA' })).toBe('Sin número');
+  });
+});

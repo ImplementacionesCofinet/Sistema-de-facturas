@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ContabilizadoChip, EstadoChip } from './EstadoChip';
-import { fecha, moneda } from '@/lib/formato';
+import { fecha, moneda, nombreDocumento } from '@/lib/formato';
 import type { Factura } from '@/lib/types';
 
 export function TablaFacturas({
@@ -39,7 +39,7 @@ export function TablaFacturas({
           {facturas.map((f) => (
             <tr key={f.id}>
               <td className="font-medium text-marca-900">
-                {f.n_factura ?? f.fra_abr ?? '—'}
+                {nombreDocumento(f)}
                 {f.tipo_documento === 'CUENTA_COBRO' && (
                   <span className="chip ml-1.5 bg-pizarra-100 text-pizarra-500">CC</span>
                 )}

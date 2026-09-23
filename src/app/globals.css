@@ -9,6 +9,12 @@
   body {
     @apply bg-crema text-marca-900 antialiased;
   }
+  /* Casillas y radios en el verde de marca, no en el azul del navegador. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: theme('colors.marca.700');
+  }
+
   /* El foco tiene que verse: se navega mucho con teclado entre facturas. */
   :focus-visible {
     @apply outline-none ring-2 ring-marca-500 ring-offset-2 ring-offset-crema;

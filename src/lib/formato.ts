@@ -78,3 +78,28 @@ export function periodo(valor: string | null | undefined): string {
   const [anio, mes] = valor.split('-');
   return `${MESES[Number(mes) - 1]} ${anio}`;
 }
+
+const ETIQUETA_TIPO: Record<string, string> = {
+  CUENTA_COBRO: 'Cuenta de cobro',
+  NOTA_CREDITO: 'Nota crédito',
+  NOTA_DEBITO: 'Nota débito',
+  OTRO: 'Documento equivalente',
+};
+
+/**
+ * Como se nombra un documento en pantalla.
+ *
+ * Las cuentas de cobro no traen numero de factura, y antes se caia al
+ * id_unico: en la tabla aparecia "CC_7543484_2026-09-23_2108700.00", que no le
+ * dice nada a quien revisa. Se prefiere el numero, luego la abreviatura, y si
+ * no hay ninguno, el tipo de documento.
+ */
+export function nombreDocumento(factura: {
+  n_factura: string | null;
+  fra_abr: string | null;
+  tipo_documento: string;
+}): string {
+  return (
+    factura.n_factura ?? factura.fra_abr ?? ETIQUETA_TIPO[factura.tipo_documento] ?? 'Sin número'
+  );
+}
