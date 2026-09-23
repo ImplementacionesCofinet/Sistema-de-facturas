@@ -109,6 +109,9 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
     totalFilas++;
 
     const nFactura = N.numeroFactura(crudo.n_factura, crudo.prefijo, crudo.folio);
+    // El folio sin prefijo es lo que permite reconocer la misma factura venga
+    // del reporte de la DIAN o del Excel de Cofinet.
+    const folio = N.folioClave(crudo.n_factura ?? nFactura, crudo.folio);
     const nitNorm = N.nit(crudo.nit);
     const fechaEmision = N.fecha(crudo.fecha_emision);
     const fechaRecepcion = N.fechaHora(crudo.fecha_recepcion);
@@ -125,7 +128,7 @@ export function normalizarMatriz(matriz: unknown[][]): ResultadoParseo {
 
     const id = N.idUnico({
       nit: nitNorm,
-      numeroFactura: nFactura,
+      folio,
       fechaEmision: fechaClave,
       total,
       cufe,

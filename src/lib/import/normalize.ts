@@ -156,6 +156,29 @@ export function numeroFactura(
   return combinado === '' ? null : combinado;
 }
 
+/**
+ * Folio sin prefijo: es la parte que comparten las dos fuentes y la que sirve
+ * para reconocer la misma factura en ambas.
+ *
+ * Se prefiere la columna "Folio", que traen tanto el reporte de la DIAN como el
+ * Excel de Cofinet. No vale quitarle las letras al numero completo, porque hay
+ * prefijos que llevan digitos ("29FE", "69DA", "1") y quedarian pegados al
+ * folio: la factura 27477 con prefijo 29FE daria 2927477 y no cruzaria con la
+ * misma factura del otro archivo.
+ */
+export function folioClave(nFactura: unknown, folio?: unknown): string | null {
+  const desdeColumna = texto(folio);
+  if (desdeColumna) return desdeColumna.toUpperCase().replace(/[\s_-]/g, '');
+
+  const completo = texto(nFactura);
+  if (!completo) return null;
+
+  const limpio = completo.toUpperCase().replace(/[\s_-]/g, '');
+  // Sin columna de folio, se descarta un prefijo puramente alfabetico.
+  const m = limpio.match(/^[A-Z]+(\d.*)$/);
+  return m ? m[1] : limpio;
+}
+
 export function tipoDocumento(valor: unknown, tieneNumeroFactura: boolean): TipoDocumento {
   const s = (texto(valor) ?? '')
     .normalize('NFD')
@@ -244,21 +267,15 @@ export function mesPeriodo(fechaIso: string | null): string | null {
  */
 export function idUnico(params: {
   nit: string | null;
-  numeroFactura: string | null;
+  /** Folio sin prefijo (ver folioClave). */
+  folio: string | null;
   fechaEmision: string | null;
   total: number | null;
   cufe?: string | null;
 }): string | null {
   const nitNorm = params.nit ?? 'SINNIT';
 
-  if (params.numeroFactura) {
-    // La DIAN entrega prefijo y folio ("FVE21642") mientras que el Excel de
-    // Cofinet guarda solo el folio ("21642"). Si la llave usara el texto
-    // completo, la misma factura entraria dos veces al importar de ambas
-    // fuentes, asi que se toma la parte numerica, que es la que coincide.
-    const folio = params.numeroFactura.replace(/\D/g, '');
-    return `${nitNorm}_${folio || params.numeroFactura}`;
-  }
+  if (params.folio) return `${nitNorm}_${params.folio}`;
 
   if (params.cufe) {
     return `CUFE_${params.cufe.toUpperCase()}`;

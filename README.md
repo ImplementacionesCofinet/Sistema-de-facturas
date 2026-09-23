@@ -309,10 +309,17 @@ Evita duplicados entre importaciones sucesivas:
 | Sin número pero con CUFE | `CUFE_<cufe>` |
 | Cuenta de cobro | `CC_NIT_Fecha_Total` — ej. `CC_10203040_2026-06-25_1500000.00` |
 
-Del número de factura se toma **solo la parte numérica**. La DIAN entrega prefijo y folio
-(`FVE21642`) mientras que el Excel de Cofinet guarda únicamente el folio (`21642`): si la
-llave usara el texto completo, la importación mensual duplicaría las facturas ya cargadas
-en el histórico. El número completo se conserva igual para mostrarlo.
+La llave usa el **folio sin prefijo**, que es el dato que traen los dos archivos. La DIAN
+entrega prefijo y folio por separado (`FVE` + `21642`) y el Excel de Cofinet solo el folio
+(`21642`): si la llave usara el número completo, la importación mensual duplicaría las
+facturas ya cargadas en el histórico. El número completo se conserva para mostrarlo.
+
+No sirve quitarle las letras al número completo, porque hay prefijos que llevan dígitos
+(`29FE`, `69DA`, `1`) y quedarían pegados al folio.
+
+Contrastado con septiembre de 2026 en los dos formatos: de las 125 facturas del reporte de
+la DIAN, 122 cruzan con el Excel. Las 3 restantes se emitieron el mismo día en que se
+descargó el reporte y todavía no estaban registradas.
 
 Cuando una cuenta de cobro no trae fecha de emisión, se usa la de recepción.
 

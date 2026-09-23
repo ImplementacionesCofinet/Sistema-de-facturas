@@ -91,53 +91,75 @@ describe('numeroFactura', () => {
   });
 });
 
+describe('folioClave', () => {
+  it('toma el folio de su propia columna', () => {
+    expect(N.folioClave('FVE21642', '21642')).toBe('21642');
+  });
+
+  it('no mezcla los digitos del prefijo con los del folio', () => {
+    // Hay prefijos con digitos ("29FE", "69DA", "1"). Si se quitaran solo las
+    // letras del numero completo, la factura 27477 con prefijo 29FE daria
+    // 2927477 y no cruzaria con la misma factura del otro archivo.
+    expect(N.folioClave('29FE27477', '27477')).toBe('27477');
+    expect(N.folioClave('69DA96283', '96283')).toBe('96283');
+    expect(N.folioClave('13122686', '3122686')).toBe('3122686');
+  });
+
+  it('sin columna de folio, descarta un prefijo alfabetico', () => {
+    expect(N.folioClave('FE1234')).toBe('1234');
+    expect(N.folioClave('SETP9900')).toBe('9900');
+  });
+
+  it('conserva el numero completo si no puede separar el prefijo', () => {
+    expect(N.folioClave('ABC')).toBe('ABC');
+    expect(N.folioClave('29FE27477')).toBe('29FE27477');
+  });
+
+  it('devuelve null cuando no hay numero', () => {
+    expect(N.folioClave(null, null)).toBeNull();
+  });
+});
+
 describe('idUnico', () => {
   it('usa NIT y folio para facturas electronicas', () => {
-    // Del numero de factura se toma la parte numerica: la DIAN entrega
-    // prefijo mas folio ("FE1234") y el Excel de Cofinet solo el folio, de
-    // modo que ambas fuentes tienen que producir la misma llave.
     expect(
-      N.idUnico({ nit: '900123456', numeroFactura: 'FE1234', fechaEmision: '2026-06-01', total: 100 }),
+      N.idUnico({ nit: '900123456', folio: '1234', fechaEmision: '2026-06-01', total: 100 }),
     ).toBe('900123456_1234');
   });
 
-  it('da la misma llave con prefijo y sin el', () => {
-    const conPrefijo = N.idUnico({
-      nit: '901570977', numeroFactura: 'FVE21642', fechaEmision: null, total: null,
+  it('da la misma llave venga de la DIAN o del Excel de Cofinet', () => {
+    // La DIAN manda prefijo y folio por separado; Cofinet solo el folio.
+    const dian = N.idUnico({
+      nit: '901570977', folio: N.folioClave('FVE21642', '21642'), fechaEmision: null, total: null,
     });
-    const soloFolio = N.idUnico({
-      nit: '901570977', numeroFactura: '21642', fechaEmision: null, total: null,
+    const cofinet = N.idUnico({
+      nit: '901570977', folio: N.folioClave(null, '21642'), fechaEmision: null, total: null,
     });
-    expect(conPrefijo).toBe(soloFolio);
-  });
-
-  it('conserva el numero completo cuando no tiene digitos', () => {
-    expect(
-      N.idUnico({ nit: '900123456', numeroFactura: 'ABC', fechaEmision: null, total: null }),
-    ).toBe('900123456_ABC');
+    expect(dian).toBe(cofinet);
+    expect(dian).toBe('901570977_21642');
   });
 
   it('usa CC_NIT_Fecha_Total para cuentas de cobro', () => {
     expect(
-      N.idUnico({ nit: '10203040', numeroFactura: null, fechaEmision: '2026-06-01', total: 1500000 }),
+      N.idUnico({ nit: '10203040', folio: null, fechaEmision: '2026-06-01', total: 1500000 }),
     ).toBe('CC_10203040_2026-06-01_1500000.00');
   });
 
-  it('cae en el CUFE cuando no hay numero ni fecha', () => {
+  it('cae en el CUFE cuando no hay folio ni fecha', () => {
     expect(
-      N.idUnico({ nit: '900123456', numeroFactura: null, fechaEmision: null, total: null, cufe: 'abc123' }),
+      N.idUnico({ nit: '900123456', folio: null, fechaEmision: null, total: null, cufe: 'abc123' }),
     ).toBe('CUFE_ABC123');
   });
 
   it('devuelve null cuando no hay datos suficientes', () => {
     expect(
-      N.idUnico({ nit: null, numeroFactura: null, fechaEmision: null, total: null }),
+      N.idUnico({ nit: null, folio: null, fechaEmision: null, total: null }),
     ).toBeNull();
   });
 
-  it('es estable entre importaciones aunque cambie el formato del NIT', () => {
-    const a = N.idUnico({ nit: N.nit('900.123.456-7'), numeroFactura: N.numeroFactura('FE 1234'), fechaEmision: null, total: null });
-    const b = N.idUnico({ nit: N.nit('900123456'), numeroFactura: N.numeroFactura('FE-1234'), fechaEmision: null, total: null });
+  it('es estable aunque cambie el formato del NIT', () => {
+    const a = N.idUnico({ nit: N.nit('900.123.456-7'), folio: '1234', fechaEmision: null, total: null });
+    const b = N.idUnico({ nit: N.nit('900123456'), folio: '1234', fechaEmision: null, total: null });
     expect(a).toBe(b);
   });
 });
