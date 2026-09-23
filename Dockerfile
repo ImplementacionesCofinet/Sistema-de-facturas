@@ -71,6 +71,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # La salida standalone ya trae node_modules/pg, que es lo unico que necesitan.
 COPY --from=builder --chown=nextjs:nodejs /app/db ./db
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+# scripts/clave.mjs comparte con la app el codigo de hashing de contrasenas.
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib/password.mjs ./src/lib/password.mjs
 
 RUN mkdir -p /datos/adjuntos && chown -R nextjs:nodejs /datos
 
