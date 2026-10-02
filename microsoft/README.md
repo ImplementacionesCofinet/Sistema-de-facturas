@@ -14,6 +14,7 @@ herramientas de Microsoft, en lugar del aplicativo web.
 
 | Archivo | Contenido |
 |---|---|
+| [`00-plan-3-dias.md`](00-plan-3-dias.md) | **Empiece aquí.** Orden de trabajo día por día, con lo que hay que verificar antes |
 | [`01-lista-sharepoint.md`](01-lista-sharepoint.md) | Columnas de la lista, tipos, índices, vistas y el límite de 5.000 elementos |
 | [`02-reglas-de-negocio.md`](02-reglas-de-negocio.md) | Las reglas que hay que reimplementar, con los casos reales que las justifican |
 | [`03-power-automate.md`](03-power-automate.md) | Los flujos, y qué entra en la licencia y qué no |
