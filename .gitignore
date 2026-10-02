@@ -18,6 +18,9 @@ next-env.d.ts
 /respaldos/*
 !/respaldos/.gitkeep
 
+# Datos reales de facturas: se generan con el conversor, no se versionan.
+microsoft/datos/*.xlsx
+
 # Certificado de la CA corporativa: es propio de cada instalacion.
 certs/*.crt
 certs/*.pem
